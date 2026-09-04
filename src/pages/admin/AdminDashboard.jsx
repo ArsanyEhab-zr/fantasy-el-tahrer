@@ -72,7 +72,7 @@ export default function AdminDashboard() {
             <TornPaperButton variant="secondary" onClick={() => navigate('/admin/players')} fullWidth rotation={1}>
               اللاعبين
             </TornPaperButton>
-            <TornPaperButton variant="danger" onClick={() => navigate('/admin/matches/create')} fullWidth rotation={-1}>
+            <TornPaperButton variant="danger" onClick={() => navigate('/admin/create-match')} fullWidth rotation={-1}>
               إنشاء مباراة
             </TornPaperButton>
             <TornPaperButton variant="ghost" onClick={() => navigate('/referee')} fullWidth rotation={0}>
