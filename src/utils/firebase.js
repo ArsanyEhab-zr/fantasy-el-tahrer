@@ -13,6 +13,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  console.error("CRITICAL: Missing Firebase Environment Variables!");
+  alert("خطأ: مفاتيح قاعدة البيانات مفقودة في السيرفر!");
+}
+
 const app = initializeApp(firebaseConfig);
 
 // Initialize Cloud Firestore and get a reference to the service

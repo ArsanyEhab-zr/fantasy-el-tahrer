@@ -14,7 +14,7 @@ export default function ScrapbookHeader({ title, showBack = false, backTo = "/" 
         <MaskingTape color="cyan" position="top-right" width="70px" rotation={-15} />
       </div>
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex flex-col md:flex-row items-center gap-3 pt-2 text-center md:text-right">
         {showBack && (
           <Link
             to={backTo}
@@ -26,7 +26,7 @@ export default function ScrapbookHeader({ title, showBack = false, backTo = "/" 
         )}
 
         {/* Logo area */}
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex flex-col md:flex-row items-center gap-3 flex-1">
           <div
             className="w-11 h-11 bg-scrap-cyan flex items-center justify-center shadow-hard-sm"
             style={{

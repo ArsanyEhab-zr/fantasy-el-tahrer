@@ -111,11 +111,14 @@ html {
   color: var(--color-scrap-ink);
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
   min-height: 100dvh;
   overflow-x: hidden;
+  width: 100%;
 }
 
 /* ========================================
