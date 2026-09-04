@@ -1,0 +1,313 @@
+@import "tailwindcss";
+
+/* ========================================
+   SCRAPBOOK FOOTBALL TOURNAMENT HUB
+   Design System: "Pitch Collage"
+   Tailwind v4 CSS-First Config
+   ======================================== */
+
+@theme {
+  /* ---- Colors ---- */
+  --color-scrap-cyan: #00ccff;
+  --color-scrap-cyan-dark: #006782;
+  --color-scrap-magenta: #fe00fe;
+  --color-scrap-magenta-dark: #a900a9;
+  --color-scrap-pink: #ff00ff;
+  --color-scrap-brown: #c19a6b;
+  --color-scrap-brown-light: #dfb584;
+  --color-scrap-brown-dark: #78582f;
+  --color-scrap-paper: #f5f5f5;
+  --color-scrap-paper-warm: #f9f9f9;
+  --color-scrap-ink: #1a1c1c;
+  --color-scrap-error: #ba1a1a;
+  --color-scrap-error-bg: #ffdad6;
+  --color-scrap-surface-dim: #dadada;
+  --color-scrap-surface-container: #eeeeee;
+  --color-scrap-outline: #6c797f;
+
+  /* ---- Fonts ---- */
+  --font-stamp: "Anybody", sans-serif;
+  --font-marker: "Bricolage Grotesque", sans-serif;
+  --font-typewriter: "Space Mono", monospace;
+
+  /* ---- Hard Shadows ---- */
+  --shadow-hard-sm: 2px 2px 0px rgba(0, 0, 0, 1);
+  --shadow-hard-md: 4px 4px 0px rgba(0, 0, 0, 1);
+  --shadow-hard-lg: 6px 6px 0px rgba(0, 0, 0, 0.9);
+  --shadow-hard-xl: 8px 8px 0px rgba(0, 0, 0, 0.85);
+
+  /* ---- Animations ---- */
+  --animate-tape-rustle: tape-rustle 2s ease-in-out infinite;
+  --animate-pulse-live: pulse-live 1.5s ease-in-out infinite;
+  --animate-paper-drop: paper-drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-marker-fill: marker-fill 1s ease-out forwards;
+  --animate-doodle-draw: doodle-draw 0.8s ease-in-out forwards;
+  --animate-sticker-pop: sticker-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-fade-in-up: fade-in-up 0.5s ease-out forwards;
+  --animate-wiggle: wiggle 0.3s ease-in-out;
+}
+
+/* ---- Keyframes ---- */
+@keyframes tape-rustle {
+  0%, 100% { transform: rotate(var(--tape-angle, -12deg)); }
+  50% { transform: rotate(calc(var(--tape-angle, -12deg) + 3deg)); }
+}
+
+@keyframes pulse-live {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: 0.4; }
+}
+
+@keyframes paper-drop {
+  0% { transform: translateY(-40px) rotate(-8deg); opacity: 0; }
+  60% { transform: translateY(6px) rotate(2deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(var(--card-angle, 0deg)); opacity: 1; }
+}
+
+@keyframes marker-fill {
+  0% { width: 0%; }
+  100% { width: var(--fill-width, 50%); }
+}
+
+@keyframes doodle-draw {
+  0% { stroke-dashoffset: var(--path-length, 100); }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes sticker-pop {
+  0% { transform: scale(0) rotate(-20deg); }
+  70% { transform: scale(1.15) rotate(5deg); }
+  100% { transform: scale(1) rotate(var(--sticker-angle, 0deg)); }
+}
+
+@keyframes fade-in-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-marker);
+  color: var(--color-scrap-ink);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ========================================
+   TEXTURE BACKGROUNDS (CSS-only)
+   ======================================== */
+
+.bg-recycled-paper {
+  background-color: var(--color-scrap-paper);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.015) 2px,
+      rgba(0, 0, 0, 0.015) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.01) 3px,
+      rgba(0, 0, 0, 0.01) 5px
+    );
+}
+
+.bg-cardboard {
+  background-color: var(--color-scrap-brown);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.07) 3px,
+      rgba(0, 0, 0, 0.07) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 8px,
+      rgba(0, 0, 0, 0.03) 8px,
+      rgba(0, 0, 0, 0.03) 9px
+    );
+}
+
+.bg-cardboard-light {
+  background-color: var(--color-scrap-brown-light);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 4px,
+      rgba(0, 0, 0, 0.04) 4px,
+      rgba(0, 0, 0, 0.04) 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.02) 10px,
+      rgba(0, 0, 0, 0.02) 11px
+    );
+}
+
+.bg-crumpled-paper {
+  background-color: #f0ebe3;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0, 0, 0, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 40% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 40%),
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 6px,
+      rgba(0, 0, 0, 0.01) 6px,
+      rgba(0, 0, 0, 0.01) 7px
+    );
+}
+
+/* ========================================
+   SCRAPBOOK UTILITY CLASSES
+   ======================================== */
+
+.shadow-hard-sm { box-shadow: var(--shadow-hard-sm); }
+.shadow-hard-md { box-shadow: var(--shadow-hard-md); }
+.shadow-hard-lg { box-shadow: var(--shadow-hard-lg); }
+.shadow-hard-xl { box-shadow: var(--shadow-hard-xl); }
+
+/* Press effect on interactive elements */
+.press-effect {
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+.press-effect:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0) !important;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hard-lg);
+}
+
+/* Stagger animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* Pre-animation state */
+.pre-animate {
+  opacity: 0;
+}
+
+/* Ink / marker text effect */
+.text-stamp {
+  font-family: var(--font-stamp);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-marker {
+  font-family: var(--font-marker);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.text-typewriter {
+  font-family: var(--font-typewriter);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Torn edge masks */
+.torn-top {
+  clip-path: polygon(
+    0% 4%, 5% 1%, 10% 3%, 15% 0%, 20% 2%, 25% 1%, 30% 4%, 35% 0%, 
+    40% 3%, 45% 1%, 50% 2%, 55% 0%, 60% 3%, 65% 1%, 70% 4%, 75% 0%, 
+    80% 2%, 85% 1%, 90% 3%, 95% 0%, 100% 2%,
+    100% 100%, 0% 100%
+  );
+}
+
+.torn-bottom {
+  clip-path: polygon(
+    0% 0%, 100% 0%,
+    100% 96%, 95% 99%, 90% 97%, 85% 100%, 80% 98%, 75% 99%, 70% 96%,
+    65% 100%, 60% 97%, 55% 99%, 50% 98%, 45% 100%, 40% 97%, 35% 100%,
+    30% 96%, 25% 99%, 20% 98%, 15% 100%, 10% 97%, 5% 99%, 0% 96%
+  );
+}
+
+.torn-both {
+  clip-path: polygon(
+    0% 4%, 4% 1%, 8% 3%, 12% 0%, 17% 2%, 22% 1%, 27% 4%, 32% 0%,
+    37% 3%, 42% 1%, 47% 2%, 52% 0%, 57% 3%, 62% 1%, 67% 4%, 72% 0%,
+    77% 2%, 82% 1%, 87% 3%, 92% 0%, 97% 2%, 100% 4%,
+    100% 96%, 97% 99%, 92% 97%, 87% 100%, 82% 98%, 77% 99%, 72% 96%,
+    67% 100%, 62% 97%, 57% 99%, 52% 98%, 47% 100%, 42% 97%, 37% 100%,
+    32% 96%, 27% 99%, 22% 98%, 17% 100%, 12% 97%, 8% 99%, 4% 96%, 0% 98%
+  );
+}
+
+/* Tape texture overlay */
+.tape-texture {
+  position: relative;
+}
+.tape-texture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(255,255,255,0.1) 1px,
+      rgba(255,255,255,0.1) 2px
+    );
+  pointer-events: none;
+}
+
+/* Scrollbar hiding */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
