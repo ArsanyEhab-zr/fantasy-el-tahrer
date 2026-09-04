@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 import ScrapbookPage from '../../components/layout/ScrapbookPage';
 import ScrapbookHeader from '../../components/layout/ScrapbookHeader';
 import CardboardContainer from '../../components/primitives/CardboardContainer';
@@ -7,12 +10,56 @@ import InkDoodle from '../../components/primitives/InkDoodle';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [connectionStatus, setConnectionStatus] = useState('checking'); // 'checking' | 'connected' | 'disconnected'
+
+  useEffect(() => {
+    async function checkFirebaseConnection() {
+      const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+      if (!apiKey) {
+        setConnectionStatus('disconnected');
+        return;
+      }
+
+      try {
+        const q = query(collection(db, 'teams'), limit(1));
+        await getDocs(q);
+        setConnectionStatus('connected');
+      } catch (error) {
+        console.error('Firebase connection check failed:', error);
+        setConnectionStatus('disconnected');
+      }
+    }
+
+    checkFirebaseConnection();
+  }, []);
 
   return (
     <ScrapbookPage>
       <ScrapbookHeader title="لوحة الإدارة" showBack />
 
-      <div className="flex flex-col gap-6 mt-4">
+      {/* Firebase Connection Status Badge */}
+      <div className="mb-4 flex justify-center">
+        {connectionStatus === 'checking' && (
+          <div className="px-4 py-2 bg-yellow-100 border-2 border-yellow-500 text-yellow-800 font-bold rounded-lg shadow-sm flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse" />
+            <span>Checking Firebase Connection...</span>
+          </div>
+        )}
+        {connectionStatus === 'connected' && (
+          <div className="px-4 py-2 bg-emerald-100 border-2 border-emerald-600 text-emerald-800 font-bold rounded-lg shadow-sm flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+            <span>Firebase Connected (Live)</span>
+          </div>
+        )}
+        {connectionStatus === 'disconnected' && (
+          <div className="px-4 py-2 bg-red-100 border-2 border-red-600 text-red-800 font-bold rounded-lg shadow-sm flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
+            <span>Firebase Disconnected: Check Environment Variables</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-6 mt-2">
         {/* Core Controls */}
         <CardboardContainer variant="board" className="relative p-6 animate-fade-in-up">
           <InkDoodle type="star" size={30} className="absolute -top-3 -right-3 text-scrap-magenta" />
@@ -58,3 +105,4 @@ export default function AdminDashboard() {
     </ScrapbookPage>
   );
 }
+
