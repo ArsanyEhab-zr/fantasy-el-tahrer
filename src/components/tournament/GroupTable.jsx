@@ -7,12 +7,11 @@ import TeamCrest from '../ui/TeamCrest';
  * - Tabular lining figures for aligned columns
  * - Clear disciplinary point deduction badge (-N خصم • السبب) from computed penaltiesList
  * - Subtle live pulse dot when a team's row includes a live match in progress
- * - Conditional qualification highlight based on settings.enableKnockout
  */
 export default function GroupTable({
   groupName,
   standings = [],
-  enableKnockout = false,
+
   className = '',
 }) {
   const { getTeam } = useTournament();
@@ -56,7 +55,7 @@ export default function GroupTable({
               const rank = idx + 1;
               const team = getTeam(entry.teamId);
               const isLeader = rank === 1;
-              const isQualifying = enableKnockout ? rank <= 2 : rank === 1;
+              const isQualifying = rank <= 4;
               const goalsFor = entry.f ?? 0;
               const goalsAgainst = entry.a ?? 0;
               const gd = entry.gd != null ? entry.gd : goalsFor - goalsAgainst;
@@ -74,7 +73,7 @@ export default function GroupTable({
                   }`}
                 >
                   {/* Rank */}
-                  <td className="py-3.5 pr-4 pl-2 text-center">
+                  <td className={`py-3.5 pr-4 pl-2 text-center border-s-4 ${isQualifying ? 'border-emerald-400' : 'border-transparent'}`}>
                     <span
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-lg font-display font-extrabold text-xs num-tabular ${
                         isLeader
@@ -168,6 +167,7 @@ export default function GroupTable({
           </tbody>
         </table>
       </div>
+      <footer className="px-4 py-3 text-xs font-bold text-emerald-300">يتأهل الأربعة الأوائل من كل مجموعة</footer>
     </section>
   );
 }

@@ -1,3 +1,5 @@
+import { useMatchdays } from '../../hooks/useMatchdays';
+import MatchdaySelector from '../../components/match/MatchdaySelector';
 import { useState, useMemo } from 'react';
 import {
   Play,
@@ -99,14 +101,10 @@ export default function RefereePage() {
   // Zero-Lag Synced Clock Hook (optimistic serverTimestamp() null safety + skew clamping + stoppage time)
   const clock = useMatchTimer(activeMatch, settings?.halfDurationMinutes || 10);
 
-  const liveMatches = matches.filter((m) => m.status === 'مباشر');
-  const scheduledMatches = [...matches]
-    .filter((m) => m.status === 'مجدولة')
-    .sort((a, b) => {
-      const da = parseTimestamp(a.scheduledAt || a.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      const db = parseTimestamp(b.scheduledAt || b.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return da - db;
-    });
+  const picker = useMatchdays(matches);
+  const dayMatches = picker.selected?.matches || [];
+  const liveMatches = dayMatches.filter(m => m.status === 'مباشر');
+  const scheduledMatches = dayMatches.filter(m => m.status === 'مجدولة');
 
   // Open Starting 5 Setup for a scheduled match
   const openLineupSetup = (match) => {
@@ -1107,6 +1105,7 @@ export default function RefereePage() {
         </h1>
       </div>
 
+      <MatchdaySelector {...picker} />
       {/* Currently Live Matches */}
       {liveMatches.length > 0 && (
         <section className="space-y-3">

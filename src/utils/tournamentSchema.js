@@ -79,7 +79,7 @@ export const normalizeMatch = (raw, id) => {
   const data = raw && typeof raw === 'object' ? raw : {};
   const homeTeamId = String(data.homeTeamId || data.homeTeam || '');
   const awayTeamId = String(data.awayTeamId || data.awayTeam || '');
-  const status = data.status || 'مجدولة';
+  const status = ['قادمة', 'scheduled'].includes(data.status) ? 'مجدولة' : data.status || 'مجدولة';
   const isEnded = status === 'منتهية' || status === 'انتهت' || status === 'انسحاب';
 
   const legacyMinuteSec = Number.isFinite(Number(data.minute))
@@ -197,7 +197,7 @@ export const kickOffMatch = async (
   const ref = doc(db, 'matches', String(matchId));
   return runTransaction(db, async tx => {
     const snap = await tx.get(ref);
-    if (!snap.exists() || !['مجدولة', 'scheduled'].includes(snap.data().status || 'مجدولة')) {
+    if (!snap.exists() || !['مجدولة', 'قادمة', 'scheduled'].includes(snap.data().status || 'مجدولة')) {
       throw new Error('تغيّرت حالة المباراة. أعد فتح قائمة المباريات.');
     }
     tx.update(ref, {
@@ -531,7 +531,7 @@ async function finishMatch({ match: selected, clockSnapshot, tiebreakWinnerId, b
         const next = await tx.get(target);
         const data = next.data() || {};
         const occupant = data[side + 'TeamId'] || data[side + 'Team'];
-        if ((data.status && !['مجدولة', 'scheduled'].includes(data.status)) || (occupant && occupant !== winner)) {
+        if ((data.status && !['مجدولة', 'قادمة', 'scheduled'].includes(data.status)) || (occupant && occupant !== winner)) {
           throw new Error('تعذّر التصعيد. راجع مواجهة الدور التالي في لوحة الإدارة.');
         }
         tx.set(target, {

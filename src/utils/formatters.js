@@ -17,13 +17,13 @@ export const formatMatchDateTime = (scheduledAt) => {
   if (!date) return null;
 
   const datePart = new Intl.DateTimeFormat('ar-EG', {
-    weekday: 'short',
+    timeZone: 'Africa/Cairo', weekday: 'short',
     day: 'numeric',
     month: 'short',
   }).format(date);
 
   const timePart = new Intl.DateTimeFormat('ar-EG', {
-    hour: '2-digit',
+    timeZone: 'Africa/Cairo', hour: '2-digit',
     minute: '2-digit',
     hour12: true,
   }).format(date);
@@ -35,12 +35,27 @@ export const formatMatchDateTime = (scheduledAt) => {
   };
 };
 
-export const toDateTimeLocalValue = (scheduledAt) => {
-  const date = parseTimestamp(scheduledAt);
-  if (!date) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
+const cairoClock = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+
+export function toDateTimeLocalValue(value) {
+  const date = parseTimestamp(value);
+  return date ? cairoClock.format(date).replace(' ', 'T') : '';
+}
+
+// Resolve the league's wall clock independently of the admin device's timezone.
+export function fromCairoLocal(value) {
+  const wall = Date.parse(value + ':00Z');
+  let instant = wall;
+  for (let i = 0; i < 3; i++) {
+    const local = toDateTimeLocalValue(instant);
+    if (local === value) return new Date(instant);
+    instant += wall - Date.parse(local + ':00Z');
+  }
+  throw new Error('هذا التوقيت غير متاح بتوقيت القاهرة.');
+}
 
 /**
  * Formats raw elapsed match seconds into display strings with stoppage-time awareness.

@@ -1,3 +1,5 @@
+import { useMatchdays } from '../../hooks/useMatchdays';
+import MatchdaySelector from '../../components/match/MatchdaySelector';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Radio,
@@ -5,7 +7,6 @@ import {
   Flame,
   GitBranch,
   CalendarClock,
-  CheckCircle2,
   ChevronLeft,
 
 } from 'lucide-react';
@@ -15,7 +16,7 @@ import { matchViewerUrl } from '../../utils/formatters';
 import ScoreBoard from '../../components/match/ScoreBoard';
 import MatchCard from '../../components/match/MatchCard';
 import TeamCrest from '../../components/ui/TeamCrest';
-import { StaggerList, StaggerItem, RevealBlock } from '../../components/ui/MotionPrimitives';
+import { StaggerList, StaggerItem } from '../../components/ui/MotionPrimitives';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
 /**
@@ -26,10 +27,7 @@ import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates'
 export default function HomePage() {
   const navigate = useNavigate();
   const {
-    liveMatch,
-    liveMatches,
-    upcomingMatches: contextUpcoming = [],
-    recentMatches = [],
+    matches,
     topScorers = [],
     getTeam,
     loading,
@@ -37,9 +35,9 @@ export default function HomePage() {
   } = useTournament();
 
   const enableKnockout = Boolean(settings?.enableKnockout);
-  const upcomingMatches = contextUpcoming.slice(0, 4);
-
-  const nextMatch = upcomingMatches[0] || null;
+  const picker = useMatchdays(matches);
+  const fixtures = picker.selected?.matches || [];
+  const liveMatch = fixtures.find(m => m.status === 'مباشر');
   const topThreeScorers = topScorers.slice(0, 3);
 
   const quickActions = [
@@ -82,29 +80,6 @@ export default function HomePage() {
     <>
       <MatchdayHero liveMatch={liveMatch} />
       <div id="match-centre" className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-8 md:py-16">
-      {/* Hero Banner: Live Match Center OR Next Scheduled Kick-Off */}
-      <RevealBlock>
-        {loading ? (
-          <LoadingSkeleton count={1} height="h-56" />
-        ) : liveMatch ? (
-          <div className="space-y-3">
-            {liveMatches.map(match => (
-              <Link key={match.id} to={matchViewerUrl(match.id)} className="block rounded-3xl">
-                <ScoreBoard match={match} />
-                <span className="flex min-h-12 items-center justify-center gap-2 text-fanta-orange">
-                  <Radio size={18} /> ادخل مركز المتابعة المباشر
-                </span>
-              </Link>
-            ))}
-          </div>
-        ) : nextMatch ? (
-          <section className="space-y-3">
-            <h2 className="font-display text-xl font-bold">المباراة القادمة</h2>
-            <MatchCard match={nextMatch} onClick={() => navigate(matchViewerUrl(nextMatch.id))} />
-          </section>
-        ) : null}
-      </RevealBlock>
-
       {/* Quick Fan Navigation Cards (ZERO Admin/Referee links) */}
       <StaggerList className="grid grid-cols-3 gap-3">
         {quickActions.map((item) => {
@@ -146,18 +121,23 @@ export default function HomePage() {
               className="font-display font-extrabold text-xl text-arena-ink flex items-center gap-2"
             >
               <CalendarClock size={21} className="text-fanta-orange" aria-hidden="true" />
-              <span>جدول المباريات القادمة</span>
+              <span>مباريات أيام الدوري</span>
             </h2>
             <span className="text-xs font-display font-bold text-arena-muted num-tabular">
-              {upcomingMatches.length} مباريات
+              {fixtures.length} مباريات
             </span>
           </div>
 
+          <MatchdaySelector {...picker} />
           {loading ? (
             <LoadingSkeleton count={2} height="h-28" />
-          ) : upcomingMatches.length > 0 ? (
+          ) : fixtures.length > 0 ? (
             <div className="space-y-3">
-              {upcomingMatches.map((match) => (
+              {fixtures.map((match) => match.status === 'مباشر' ? (
+                <Link key={match.id} to={matchViewerUrl(match.id)} className="block rounded-3xl">
+                  <ScoreBoard match={match} />
+                </Link>
+              ) : (
                 <MatchCard key={match.id} match={match} onClick={() => navigate(matchViewerUrl(match.id))} />
               ))}
             </div>
@@ -243,42 +223,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Recent Finished Results */}
-      <section aria-labelledby="recent-heading" className="space-y-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <h2
-            id="recent-heading"
-            className="font-display font-extrabold text-xl text-arena-ink flex items-center gap-2"
-          >
-            <CheckCircle2 size={21} className="text-emerald-400" aria-hidden="true" />
-            <span>آخر النتائج</span>
-          </h2>
-          <button
-            type="button"
-            onClick={() => navigate('/standings')}
-            className="inline-flex items-center gap-1 text-xs font-display font-bold text-fanta-orange hover:underline min-h-[36px] px-1 cursor-pointer"
-          >
-            <span>جدول الترتيب</span>
-            <ChevronLeft size={14} aria-hidden="true" />
-          </button>
-        </div>
 
-        {loading ? (
-          <LoadingSkeleton count={2} height="h-24" />
-        ) : recentMatches.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {recentMatches.map((match) => (
-              <MatchCard key={match.id} match={match} onClick={() => navigate(matchViewerUrl(match.id))} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={CheckCircle2}
-            title="لا توجد نتائج منتهية بعد"
-            description="ستُعرض هنا نتائج المباريات فور انتهائها مباشرة."
-          />
-        )}
-      </section>
       </div>
     </>
   );

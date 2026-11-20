@@ -1,3 +1,6 @@
+import { useMatchdays } from '../../hooks/useMatchdays';
+import MatchdaySelector from '../../components/match/MatchdaySelector';
+import { dayLabel } from '../../utils/matchdays';
 import { useState } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import {
@@ -14,7 +17,7 @@ import { useTournament } from '../../hooks/TournamentContext';
 import TeamCrest from '../../components/ui/TeamCrest';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
-import { formatMatchDateTime, toDateTimeLocalValue, parseTimestamp } from '../../utils/formatters';
+import { formatMatchDateTime, toDateTimeLocalValue, fromCairoLocal } from '../../utils/formatters';
 
 const STATUS_OPTIONS = ['مجدولة', 'مباشر', 'منتهية', 'انسحاب'];
 
@@ -25,6 +28,7 @@ const STATUS_OPTIONS = ['مجدولة', 'مباشر', 'منتهية', 'انسح�
 export default function ManageMatches() {
   const { teams = [], groups = [], matches = [], loading, getTeam } = useTournament();
 
+  const picker = useMatchdays(matches);
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingId, setEditingId] = useState(null);
 
@@ -33,7 +37,12 @@ export default function ManageMatches() {
   const [groupId, setGroupId] = useState('');
   const [round, setRound] = useState('دور المجموعات');
   const [pitch, setPitch] = useState('الملعب الرئيسي');
-  const [scheduledLocal, setScheduledLocal] = useState('');
+  const [draftTime, setScheduledLocal] = useState(null);
+  const scheduledLocal = draftTime ?? (picker.selected?.date ? picker.selected.date + 'T20:00' : '');
+  const matchDate = scheduledLocal.slice(0, 10);
+  const knownDay = picker.days.find(d => d.date === matchDate && d.number);
+  const matchDay = knownDay?.number || Math.max(0, ...picker.days.map(d => d.number)) + 1;
+  const matchDayLabel = knownDay?.label || dayLabel(matchDay);
   const [status, setStatus] = useState('مجدولة');
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
@@ -47,7 +56,7 @@ export default function ManageMatches() {
     setGroupId('');
     setRound('دور المجموعات');
     setPitch('الملعب الرئيسي');
-    setScheduledLocal('');
+    setScheduledLocal(null);
     setStatus('مجدولة');
     setHomeScore(0);
     setAwayScore(0);
@@ -64,16 +73,19 @@ export default function ManageMatches() {
     setFeedback(null);
     try {
       const scheduledAt = scheduledLocal
-        ? Timestamp.fromDate(new Date(scheduledLocal))
+        ? Timestamp.fromDate(fromCairoLocal(scheduledLocal))
         : null;
 
+      const stage = groupId || round === 'دور المجموعات' ? 'group'
+        : ['دور الـ 16', 'ربع النهائي', 'نصف النهائي', 'النهائي'].includes(round) ? 'knockout' : 'group';
       const payload = {
+        matchDay, matchDayLabel, matchDate, stage,
         homeTeam: homeTeamId,
         awayTeam: awayTeamId,
         homeTeamId,
         awayTeamId,
         groupId: groupId || null,
-        type: groupId ? 'group' : round === 'نصف النهائي' || round === 'النهائي' ? 'knockout' : 'group',
+        type: stage,
         round: round.trim() || 'دور المجموعات',
         pitch: pitch.trim(),
         scheduledAt,
@@ -94,6 +106,7 @@ export default function ManageMatches() {
         });
         setFeedback({ type: 'success', text: 'تمت جدولة المباراة بنجاح.' });
       }
+      picker.select(matchDay);
       resetForm();
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حفظ المباراة.' });
@@ -127,13 +140,8 @@ export default function ManageMatches() {
     }
   };
 
-  const filteredMatches = [...matches]
-    .filter((m) => filterStatus === 'all' || m.status === filterStatus)
-    .sort((a, b) => {
-      const da = parseTimestamp(a.scheduledAt || a.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      const db = parseTimestamp(b.scheduledAt || b.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return da - db;
-    });
+  const dayMatches = picker.selected?.matches || [];
+  const filteredMatches = dayMatches.filter(m => filterStatus === 'all' || m.status === filterStatus);
 
   return (
     <div className="space-y-6">
@@ -146,6 +154,10 @@ export default function ManageMatches() {
         </h1>
       </div>
 
+      <MatchdaySelector {...picker} select={number => {
+        resetForm();
+        picker.select(number);
+      }} />
       {/* Exact Match Scheduler Form */}
       <section className="glass-card rounded-3xl bg-ops-surface border-2 border-ops-border p-5 sm:p-6 shadow-[0_6px_22px_-8px_rgba(17,20,28,0.08)]">
         <h2 className="font-display font-extrabold text-xl text-ops-ink mb-4">
@@ -198,10 +210,11 @@ export default function ManageMatches() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <label htmlFor="match-datetime" className="block text-xs font-bold text-ops-ink mb-1.5">
-                تاريخ ووقت الانطلاق الدقيق
+                تاريخ ووقت الانطلاق (القاهرة)
               </label>
               <input
                 id="match-datetime"
+                required
                 type="datetime-local"
                 value={scheduledLocal}
                 onChange={(e) => setScheduledLocal(e.target.value)}
@@ -209,6 +222,9 @@ export default function ManageMatches() {
               />
             </div>
 
+            <div className="self-center text-sm font-bold text-ops-ink" aria-live="polite">
+              {matchDate ? matchDayLabel : 'اختر تاريخ يوم الدوري'}
+            </div>
             <div>
               <label htmlFor="match-group" className="block text-xs font-bold text-ops-ink mb-1.5">
                 المجموعة (اختياري)
@@ -342,7 +358,7 @@ export default function ManageMatches() {
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2">
         {[
-          { key: 'all', label: `الكل (${matches.length})` },
+          { key: 'all', label: `الكل (${dayMatches.length})` },
           { key: 'مجدولة', label: 'مجدولة' },
           { key: 'مباشر', label: 'مباشر' },
           { key: 'منتهية', label: 'منتهية' },

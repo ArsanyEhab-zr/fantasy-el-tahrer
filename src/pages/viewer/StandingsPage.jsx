@@ -1,4 +1,4 @@
-import { BarChart3, Info, AlertTriangle } from 'lucide-react';
+import { BarChart3, AlertTriangle } from 'lucide-react';
 import { useTournament } from '../../hooks/TournamentContext';
 import GroupTable from '../../components/tournament/GroupTable';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
@@ -7,7 +7,6 @@ import { StaggerList, StaggerItem, RevealBlock } from '../../components/ui/Motio
 /**
  * StandingsPage — Live League/Group Standings (/standings).
  * - Dynamically reflects real-time match scores AND disciplinary point deductions
- * - Adapts qualification guidance based on settings.enableKnockout
  */
 export default function StandingsPage() {
   const {
@@ -15,10 +14,8 @@ export default function StandingsPage() {
     penalties = [],
     getTeam,
     loading,
-    settings,
   } = useTournament();
 
-  const enableKnockout = Boolean(settings?.enableKnockout);
   const validGroups = groups.filter((g) => g.standings && g.standings.length > 0);
 
   return (
@@ -33,14 +30,6 @@ export default function StandingsPage() {
           </h1>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-arena-surface border border-arena-border text-xs font-semibold text-arena-muted">
-          <Info size={15} className="text-fanta-volt shrink-0" aria-hidden="true" />
-          <span>
-            {enableKnockout
-              ? 'يتأهل الأول والثاني من كل مجموعة إلى دور الإقصائيات.'
-              : 'البطولة بنظام الدوري — أعلى رصيد نقاط يتوج باللقب.'}
-          </span>
-        </div>
       </RevealBlock>
 
       {loading ? (
@@ -58,7 +47,6 @@ export default function StandingsPage() {
               <GroupTable
                 groupName={group.name || group.id}
                 standings={group.standings}
-                enableKnockout={enableKnockout}
               />
             </StaggerItem>
           ))}

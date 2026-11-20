@@ -74,7 +74,7 @@ export default function ManageBracket() {
         if (bound && bound !== slotId) throw new Error('الخانة مرتبطة بمباراة مسجلة.');
         const snap = await tx.get(ref);
         const current = snap.data();
-        if (current?.status && !['مجدولة', 'scheduled'].includes(current.status)) {
+        if (current?.status && !['مجدولة', 'قادمة', 'scheduled'].includes(current.status)) {
           throw new Error('لا يمكن تغيير طرفي مواجهة بدأت بالفعل.');
         }
         const update = { type: 'knockout', round: getRoundName(slotId) };

@@ -131,7 +131,7 @@ export function TournamentProvider({ children }) {
           id: d.id,
           teams: Array.isArray(d.data()?.teams) ? d.data().teams.map(String) : [],
         }));
-        list.sort((a, b) => (a.name || a.id || '').localeCompare(b.name || b.id || '', 'ar'));
+        list.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.name || a.id || '').localeCompare(b.name || b.id || '', 'ar'));
         setRawGroups(list);
         markResolved('groups');
       },
