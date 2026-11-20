@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
   const logos = readdirSync(new URL('./public/logos/', import.meta.url))
     .filter(file => file.endsWith('.svg')).sort().map(file => 'logos/' + file)
   const files = [...logos, '_redirects', 'league-logo.webp', 'league-logo.png', 'brand/stadium.webp',
-    ...['favicon.png', 'icon-192.png', 'icon-512.png', 'maskable-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
+    ...['favicon.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
   if (target === 'viewer') {
     files.push('firebase-messaging-sw.js')
     files.push(...['portrait', 'wide', 'pitch', 'ball-frames'].map(file => 'brand/matchday/' + file + '.webp'))
@@ -91,7 +91,7 @@ export default defineConfig(({ mode }) => {
           start_url: '/', scope: '/', display: 'standalone', orientation: 'portrait',
           icons: [192, 512].map(size => ({
             src: iconUrl(`icon-${size}.png`), sizes: `${size}x${size}`, type: 'image/png', purpose: 'any',
-          })).concat({src: iconUrl('maskable-512.png'), sizes:'512x512', type:'image/png', purpose:'maskable'}),
+          })),
         },
       }),
     ],
