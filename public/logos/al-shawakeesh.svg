@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Al-Shawakeesh</title>
+  <path fill="#101827" stroke="#F59E0B" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#334155" stroke="#F59E0B" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g fill="#F59E0B" stroke="#17212e" stroke-width="2.5">
+      <path d="m40 46 6-6 39 40-6 7Z"/><path d="m80 46-6-6-39 40 6 7Z"/>
+    </g>
+    <g fill="#dce7ed" stroke="#182636" stroke-width="2.5">
+      <path d="m26 47 15-16 7 1 9 10-7 8-7-5-10 11Z"/><path d="m94 47-15-16-7 1-9 10 7 8 7-5 10 11Z"/>
+    </g>
+    <path fill="#fff" d="m30 46 13-12 4 2-14 13Zm61 0L78 34l-4 2 14 13Z"/><path fill="#F59E0B" d="m60 84 4 5-4 6-4-6Z"/>
+  </g>
+</svg>

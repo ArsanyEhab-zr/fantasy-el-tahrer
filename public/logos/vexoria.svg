@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Vexoria FC</title>
+  <path fill="#101827" stroke="#EAB308" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#6D28D9" stroke="#EAB308" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#ffdf70" stroke="#28134d" stroke-width="2" d="m60 20 4 9 10 1-8 7 2 10-8-5-9 5 2-10-7-7 10-1Z"/>
+    <path fill="#EAB308" stroke="#27174b" stroke-width="3" d="M24 42h19l17 30 17-30h19L60 97Z"/>
+    <path fill="#fff7d2" d="m31 46 8 1 21 36-2 4Zm50 1h8L69 73Z"/>
+  </g>
+</svg>

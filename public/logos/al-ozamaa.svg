@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Al-Ozamaa</title>
+  <path fill="#101827" stroke="#FBBF24" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#991B1B" stroke="#FBBF24" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#FBBF24" d="m40 27 13 5 7-12 8 12 13-5-5 14H45Z"/>
+    <path fill="#111827" stroke="#FBBF24" stroke-width="2.5" d="m36 42 10 2 14-3 14 3 10-2 2 13 5 12-8 1 1 11-9-3-3 11-5-3-7 10-7-10-6 3-3-11-9 3 2-12-8 1 6-13Z"/>
+    <path fill="#e9ae3c" d="m41 49 11 1 8 6 9-6 10-1-7 8 2 7-7 8-4-5 1-10-4 5-4-5 1 10-5 5-6-8 2-8Z"/>
+    <path fill="#fff1bd" d="m46 55 9 3-5 1Zm28 0-9 3 5 1ZM55 72l5 2 5-2-5 10Z"/>
+  </g>
+</svg>

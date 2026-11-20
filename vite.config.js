@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -16,13 +16,16 @@ export default defineConfig(({ mode }) => {
   if (!Object.hasOwn(apps, target)) throw new Error('VITE_APP_TARGET must be viewer, admin, or referee')
   const app = apps[target]
   const icons = 'icons/' + target
-  const files = ['_redirects', 'brand/icon-192.png', 'brand/stadium.webp',
+  const logos = readdirSync(new URL('./public/logos/', import.meta.url))
+    .filter(file => file.endsWith('.svg')).sort().map(file => 'logos/' + file)
+  const files = [...logos, '_redirects', 'brand/icon-192.png', 'brand/stadium.webp',
     ...['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
   if (target === 'viewer') {
     files.push(...['portrait', 'wide', 'pitch', 'ball-frames'].map(file => 'brand/matchday/' + file + '.webp'))
   }
 
   return {
+    define: { __CREST_URLS__: JSON.stringify(logos.map(file => '/' + file)) },
     resolve: { alias: { '@app-routes': fileURLToPath(new URL('./src/routes/' + target + '.jsx', import.meta.url)) } },
     build: {
       copyPublicDir: false,

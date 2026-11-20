@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Red Devils</title>
+  <path fill="#09090B" stroke="#fb5949" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#B91C1C" stroke="#fb5949" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#09090B" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#09090B" d="M49 91Q25 82 28 62l10 7q-5-16 0-29l10 16 6 2h12l8-4 9-17q5 19-2 32l10-8q0 21-19 30l5-15-12 11-8-10Z"/>
+    <path fill="#ffdb9d" stroke="#09090B" stroke-width="2" d="m55 84 2-28-12-6-3-18 10 11-2 4 8 4-1-15-4-1 8-12 6 13-4-1v16l8-5-1-4 9-10-2 18-13 7 1 28-6 7Z"/>
+  </g>
+</svg>

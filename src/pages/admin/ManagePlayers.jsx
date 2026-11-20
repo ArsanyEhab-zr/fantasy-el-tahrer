@@ -6,7 +6,7 @@ import { db } from '../../utils/firebase';
 import { useTournament } from '../../hooks/TournamentContext';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
-const POSITIONS = ['حارس مرمى', 'مدافع', 'لاعب وسط', 'مهاجم'];
+const POSITIONS = ['لاعب', 'حارس مرمى', 'مدافع', 'لاعب وسط', 'مهاجم'];
 
 /**
  * ManagePlayers — Roster Management (/admin/players).
@@ -49,7 +49,8 @@ function PlayerRoster({ initialTeamFilter }) {
       const payload = {
         nameAr: nameAr.trim(),
         position: position.trim() || 'لاعب',
-        jerseyNumber: parseInt(jerseyNumber, 10) || 0,
+        number: jerseyNumber === '' ? null : Number(jerseyNumber),
+        jerseyNumber: jerseyNumber === '' ? null : Number(jerseyNumber),
         team: teamId,
         teamId,
       };
@@ -57,7 +58,7 @@ function PlayerRoster({ initialTeamFilter }) {
         await updateDoc(doc(db, 'players', String(editingId)), payload);
         setFeedback({ type: 'success', text: 'تم تحديث بيانات اللاعب.' });
       } else {
-        await addDoc(collection(db, 'players'), { ...payload, goals: 0 });
+        await addDoc(collection(db, 'players'), { ...payload, goals: 0, manualGoalOffset: 0, manualYellowOffset: 0, manualRedOffset: 0 });
         setFeedback({ type: 'success', text: 'تمت إضافة اللاعب إلى قائمة الفريق.' });
       }
       resetForm();
@@ -71,7 +72,7 @@ function PlayerRoster({ initialTeamFilter }) {
   const handleEdit = (player) => {
     setEditingId(player.id);
     setNameAr(player.nameAr || '');
-    setPosition(player.position || 'مهاجم');
+    setPosition(player.position || 'لاعب');
     setJerseyNumber(player.jerseyNumber != null ? String(player.jerseyNumber) : '');
     setTeamId(player.teamId || player.team || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -81,6 +82,7 @@ function PlayerRoster({ initialTeamFilter }) {
     if (!window.confirm(`حذف اللاعب "${player.nameAr}" نهائياً؟`)) return;
     try {
       await deleteDoc(doc(db, 'players', String(player.id)));
+      if (editingId === player.id) resetForm();
       setFeedback({ type: 'success', text: `تم حذف ${player.nameAr}.` });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حذف اللاعب.' });
@@ -176,7 +178,6 @@ function PlayerRoster({ initialTeamFilter }) {
                 type="number"
                 min={0}
                 max={99}
-                required
                 value={jerseyNumber}
                 onChange={(e) => setJerseyNumber(e.target.value)}
                 placeholder="10"
@@ -292,6 +293,7 @@ function PlayerRoster({ initialTeamFilter }) {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
+                    disabled={saving}
                     onClick={() => handleEdit(player)}
                     aria-label={`تعديل ${player.nameAr}`}
                     className="w-10 h-10 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-center text-ops-ink cursor-pointer"
@@ -300,6 +302,7 @@ function PlayerRoster({ initialTeamFilter }) {
                   </button>
                   <button
                     type="button"
+                    disabled={saving}
                     onClick={() => handleDelete(player)}
                     aria-label={`حذف ${player.nameAr}`}
                     className="w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center text-red-700 cursor-pointer"

@@ -13,6 +13,9 @@ export default function ManageTeams() {
 
   const [editingId, setEditingId] = useState(null);
   const [nameAr, setNameAr] = useState('');
+  const [nameEn, setNameEn] = useState('');
+  const [color, setColor] = useState('#334155');
+  const [logoUrl, setLogoUrl] = useState('');
   const [short, setShort] = useState('');
   const [emoji, setEmoji] = useState('');
   const [saving, setSaving] = useState(false);
@@ -22,6 +25,9 @@ export default function ManageTeams() {
     setEditingId(null);
     setNameAr('');
     setShort('');
+    setNameEn('');
+    setColor('#334155');
+    setLogoUrl('');
     setEmoji('');
   };
 
@@ -33,6 +39,10 @@ export default function ManageTeams() {
     try {
       const payload = {
         nameAr: nameAr.trim(),
+        nameEn: nameEn.trim(),
+        color,
+        logoUrl: logoUrl.trim(),
+        shortName: short.trim() || nameAr.trim().slice(0, 8),
         short: short.trim() || nameAr.trim().slice(0, 8),
         emoji: emoji.trim(),
       };
@@ -54,7 +64,10 @@ export default function ManageTeams() {
   const handleEdit = (team) => {
     setEditingId(team.id);
     setNameAr(team.nameAr || '');
-    setShort(team.short || '');
+    setShort(team.shortName || team.short || '');
+    setNameEn(team.nameEn || '');
+    setColor(team.color || '#334155');
+    setLogoUrl(team.logoUrl || '');
     setEmoji(team.emoji || '');
     setFeedback(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -64,6 +77,7 @@ export default function ManageTeams() {
     if (!window.confirm(`هل أنت متأكد من حذف فريق "${team.nameAr}"؟`)) return;
     try {
       await deleteDoc(doc(db, 'teams', String(team.id)));
+      if (editingId === team.id) resetForm();
       setFeedback({ type: 'success', text: `تم حذف فريق ${team.nameAr}.` });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حذف الفريق.' });
@@ -112,7 +126,6 @@ export default function ManageTeams() {
               </label>
               <input
                 id="team-short"
-                required
                 value={short}
                 onChange={(e) => setShort(e.target.value)}
                 placeholder="مثال: الصقور"
@@ -133,6 +146,29 @@ export default function ManageTeams() {
                 className="w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg focus:bg-ops-subtle focus:border-fanta-orange text-center text-ops-ink font-bold"
               />
             </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 text-sm font-bold text-ops-ink">
+            <label>الاسم بالإنجليزية
+              <input dir="ltr" value={nameEn} onChange={e => setNameEn(e.target.value)}
+                className="block w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg" />
+            </label>
+            <label>لون الفريق
+              <input type="color" value={color} onChange={e => setColor(e.target.value)}
+                className="block w-full h-12 rounded-xl border-2 border-ops-border" />
+            </label>
+            <label>اختر شعاراً جاهزاً
+              <select value={__CREST_URLS__.includes(logoUrl) ? logoUrl : ''} onChange={e => setLogoUrl(e.target.value)}
+                className="block w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg">
+                <option value="">شعار مخصص أو الأحرف الأولى</option>
+                {__CREST_URLS__.map(url => <option key={url} value={url}>{url.split('/').pop().replace('.svg', '')}</option>)}
+              </select>
+            </label>
+            <label>رابط الشعار
+              <input dir="ltr" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="/logos/…"
+                className="block w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg" />
+            </label>
+            <TeamCrest team={{ nameAr, short, color, logoUrl, emoji }} variant="light" />
           </div>
 
           <div className="flex flex-wrap gap-2.5 pt-1">
@@ -209,7 +245,7 @@ export default function ManageTeams() {
                         {team.nameAr}
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 mt-1 text-xs font-semibold text-ops-muted">
-                        <span>{team.short}</span>
+                        <span>{team.shortName || team.short}</span>
                         <span>•</span>
                         <span className="num-tabular">{rosterCount} لاعب</span>
                         {groupName && (
@@ -233,6 +269,7 @@ export default function ManageTeams() {
                     </button>
                     <button
                       type="button"
+                      disabled={saving}
                       onClick={() => handleEdit(team)}
                       aria-label={`تعديل ${team.nameAr}`}
                       className="w-10 h-10 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-center text-ops-ink cursor-pointer"
@@ -241,6 +278,7 @@ export default function ManageTeams() {
                     </button>
                     <button
                       type="button"
+                      disabled={saving}
                       onClick={() => handleDelete(team)}
                       aria-label={`حذف ${team.nameAr}`}
                       className="w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center text-red-700 cursor-pointer"

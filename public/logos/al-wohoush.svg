@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Al-Wohoush</title>
+  <path fill="#101827" stroke="#10B981" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#1C1917" stroke="#10B981" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#9333EA" stroke="#d7baff" stroke-width="1.5" d="m32 33 23 13 10 1-5-13 15 10 10-17-2 23-16 14-23-7Z"/>
+    <path fill="#10B981" stroke="#0c1916" stroke-width="2" d="m27 85 8-20-7 2 13-17-10 1 13-9 20 7 10-5 5 9 15 9-3 11-13 3-10-8-12 4 8 4 15 1-7 9-19-2-7-8-7 5 2-11Z"/>
+    <path fill="#15231f" d="m56 54 16-2-6 8Zm26 8 5 1-2 4Z"/><path fill="#d9ffd6" d="m59 55 10-1-5 4Zm14 15 6 3-3 5Z"/>
+  </g>
+</svg>

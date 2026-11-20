@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Pharaohs FC</title>
+  <path fill="#101827" stroke="#F59E0B" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#1D4ED8" stroke="#F59E0B" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#F59E0B" d="m30 46 8-15 17 4 5-13 7 13 17-4 6 15-30-5Z"/>
+    <path fill="#fdf2cb" stroke="#101827" stroke-width="3" d="M26 56q31-27 56-4l12-6-11 13Q58 76 35 56Z"/>
+    <circle cx="59" cy="55" r="8" fill="#101827"/><circle cx="61" cy="52" r="2" fill="#fff"/>
+    <path fill="none" stroke="#F59E0B" stroke-width="5" d="M51 66 43 80m20-14q-8 20 4 20 9 0 9-8"/>
+  </g>
+</svg>

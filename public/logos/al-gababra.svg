@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Al-Gababra</title>
+  <path fill="#101827" stroke="#D97706" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#18181B" stroke="#D97706" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#ffcc68" d="m39 27 13 5 8-13 9 13 13-5-6 16H45Z"/>
+    <path fill="#D97706" d="m29 35 19 10 12-3 13 3 18-10-3 24 5 9-12-3-2 11-8-4-11 19-12-18-8 4-1-12-12 4 7-11Z"/>
+    <path fill="#242427" d="m35 44 11 9-9 1Zm49 0-9 9 8 1ZM43 58l12 4 2 10-8-9Zm34 0-12 4-2 10 8-9Zm-23 17 6-3 7 3-7 8Z"/>
+    <path fill="#fff2ce" d="m41 57 12 3-3 3Zm38 0-12 3 3 3Z"/>
+  </g>
+</svg>

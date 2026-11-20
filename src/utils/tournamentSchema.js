@@ -124,14 +124,15 @@ export const normalizeMatch = (raw, id) => {
 export const normalizePlayer = (raw, id) => {
   const data = raw && typeof raw === 'object' ? raw : {};
   const teamId = String(data.teamId || data.team || '');
+  const jerseyNumber = data.number ?? data.jerseyNumber;
   return {
     ...data,
     id: String(id ?? data.id ?? ''),
     nameAr: data.nameAr || 'لاعب',
     position: data.position || 'لاعب',
     jerseyNumber:
-      data.jerseyNumber != null && Number.isFinite(Number(data.jerseyNumber))
-        ? Number(data.jerseyNumber)
+      jerseyNumber != null && Number.isFinite(Number(jerseyNumber))
+        ? Number(jerseyNumber)
         : null,
     teamId,
     team: teamId,

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Al-Tofan</title>
+  <path fill="#101827" stroke="#0D9488" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="#15803D" stroke="#0D9488" stroke-width="1.5" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <path fill="#101827" opacity=".28" d="m22 71 76-39v13L28 81Zm11 16 64-34v7L37 92Z"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#caffed" d="M21 71q12-16 23-10-12 0-10 8 4 6 13 1 15-10 26-3 10 5 25-4-6 17-27 14-12-4-23 3-17 8-27-9Z"/>
+    <path fill="#173943" stroke="#a5fff1" stroke-width="2" d="m26 45 14 6q9-8 19-9l-1-16q14 4 19 17 12 1 20 12l-17 2 8 4-17 4-11-4-10 8 1-11-13-2-11 5 4-9Z"/>
+    <path fill="#ff5050" d="m69 54 17 1-13 4Z"/><path fill="#fff" d="m79 48 7 2-6 1Z"/>
+  </g>
+</svg>
