@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">النجوم · Al-Nogoom FC</title>
+  <defs>
+    <radialGradient id="halo">
+      <stop stop-color="#06B6D4" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+    <path id="star" d="m60 40 8 17 19 2-14 14 3 19-16-9-17 9 4-19-14-14 19-2Z"/>
+  </defs>
+  <path fill="#0F172A" stroke="#06B6D4" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <path fill="none" stroke="#FACC15" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  <circle cx="60" cy="64" r="39" fill="url(#halo)"/>
+  <path fill="#FACC15" d="m43 25 10 5 7-12 7 12 10-5-4 13H47Z"/>
+  <path fill="none" stroke="#06B6D4" stroke-width="2" d="M48 41h24M23 50l7 3m60 0 7-3M25 67h6m58 0h6"/>
+  <use href="#star" fill="#FACC15" stroke="#06B6D4" stroke-width="4" stroke-linejoin="round"/>
+  <path fill="#fff4b0" d="m60 40 1 27-9-10Zm1 27 26-8-14 14Zm0 0-18 25 4-19Z"/>
+</svg>

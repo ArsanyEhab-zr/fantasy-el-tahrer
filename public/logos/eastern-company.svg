@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">الشرقية للدخان · Eastern Company FC</title>
+  <defs>
+    <linearGradient id="metal" x2=".85" y2="1">
+      <stop stop-color="#fff4af"/><stop offset=".48" stop-color="#EAB308"/><stop offset=".76" stop-color="#ffe595"/><stop offset="1" stop-color="#bd8220"/>
+    </linearGradient>
+    <pattern id="kit" width="9" height="10" patternUnits="userSpaceOnUse">
+      <path stroke="#EAB308" opacity=".38" d="M4.5 0v10"/>
+    </pattern>
+    <path id="field" d="m60 12 41 12v33q0 32-41 51Q19 89 19 57V24Z"/>
+  </defs>
+  <path fill="#101c41" stroke="#EAB308" stroke-width="4" d="M60 5 108 18v40q0 37-48 57Q12 95 12 58V18Z"/>
+  <use href="#field" fill="#1E3A8A" stroke="#EAB308"/>
+  <use href="#field" fill="url(#kit)"/>
+  <g fill="url(#metal)" stroke="#101c41" stroke-width="1.8" stroke-linejoin="round">
+    <path d="m46 26 9 4 5-11 6 11 9-4-3 12H49Z"/>
+    <path d="m59 62-13-6-20-18 2 13 13 10-12-5 4 10 14 7-11-2 6 8 12 2 6-9 6 9 12-2 6-8-11 2 14-7 4-10-12 5 13-10 2-13-20 18-11 4 4-9 6-2-3-5-10-3-8 5 3 2Z"/>
+  </g>
+  <g fill="none" stroke-linecap="square">
+    <path stroke="#101c41" stroke-width="8" d="M60 77c-14-8-5-21 0-21s14 13 0 21v15m-8-14h16"/>
+    <path stroke="#FBD456" stroke-width="4" d="M60 77c-14-8-5-21 0-21s14 13 0 21v15m-8-14h16"/>
+  </g>
+</svg>
