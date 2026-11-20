@@ -1,3 +1,4 @@
+import { notifyPenalty } from '../../utils/notifications';
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import {
@@ -56,6 +57,7 @@ export default function ManageDiscipline() {
         pointsDeducted: pts,
         reason: reason.trim() || 'قرار انضباطي',
       });
+      notifyPenalty(getTeam(teamId)?.nameAr || 'الفريق', pts, reason.trim() || 'قرار انضباطي');
       setFeedback({
         type: 'success',
         text: `تم تسجيل خصم -${pts} نقاط على ${getTeam(teamId)?.nameAr || 'الفريق'}.`,

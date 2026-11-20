@@ -19,10 +19,23 @@ export default function PinGuard({ role, expectedPin, children }) {
 
   const isAdmin = role === 'admin';
 
-  const verifyPin = (candidate) => {
-    if (candidate.trim() === String(expectedPin)) {
+  const verifyPin = async (candidate, automatic = false) => {
+    let valid = candidate === expectedPin;
+    if (__VERCEL_PIN_CHECK__) {
+      try {
+        const result = await fetch('/api/notify?verify=1', {
+          method:'POST', headers:{'x-fanta-pin':candidate, 'Content-Type':'application/json'}, body:JSON.stringify({role}),
+        });
+        valid = result.ok && (await result.json()).ok;
+      } catch {
+        setErrorMessage('تعذّر الاتصال. حاول مرة أخرى.');
+        return;
+      }
+    }
+    if (valid) {
       try {
         sessionStorage.setItem(STORAGE_KEYS[role], '1');
+        sessionStorage.setItem('fanta_push_pin', candidate);
       } catch {
         // Ignore storage errors
       }
@@ -30,6 +43,7 @@ export default function PinGuard({ role, expectedPin, children }) {
       setUnlocked(true);
       return;
     }
+    if (automatic) return;
     setErrorMessage('الرمز السري غير صحيح، حاول مرة أخرى.');
     setPin('');
     inputRef.current?.focus();
@@ -48,8 +62,8 @@ export default function PinGuard({ role, expectedPin, children }) {
     setErrorMessage('');
     const next = `${pin}${digit}`.slice(0, 8);
     setPin(next);
-    if (next.length === String(expectedPin).length && next === String(expectedPin)) {
-      verifyPin(next);
+    if (next.length === __STAFF_PIN_LENGTH__) {
+      void verifyPin(next, true);
     }
   };
 

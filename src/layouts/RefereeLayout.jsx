@@ -23,7 +23,7 @@ export default function RefereeLayout() {
   };
 
   return (
-    <PinGuard key={lockCount} expectedPin={import.meta.env.VITE_REFEREE_PIN || '1111'} role="referee">
+    <PinGuard key={lockCount} expectedPin={__VERCEL_PIN_CHECK__ ? undefined : import.meta.env.VITE_REFEREE_PIN || '1111'} role="referee">
       <div dir="rtl" className="min-h-dvh w-full bg-arena-stadium text-arena-ink flex flex-col">
         {/* Minimal High-Contrast Top Bar */}
         <header className="sticky top-0 z-40 w-full bg-pitch-surface border-b-2 border-pitch-border pt-safe">

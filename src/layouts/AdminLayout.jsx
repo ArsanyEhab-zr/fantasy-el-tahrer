@@ -72,7 +72,7 @@ export default function AdminLayout() {
   );
 
   return (
-    <PinGuard key={lockCount} expectedPin={import.meta.env.VITE_ADMIN_PIN || '2026'} role="admin">
+    <PinGuard key={lockCount} expectedPin={__VERCEL_PIN_CHECK__ ? undefined : import.meta.env.VITE_ADMIN_PIN || '2026'} role="admin">
       <div dir="rtl" className="min-h-dvh w-full bg-ops-canvas text-ops-ink flex">
         {/* Desktop Sidebar (lg+) */}
         <aside className="hidden lg:flex lg:flex-col w-68 shrink-0 bg-ops-surface border-l-2 border-ops-border sticky top-0 h-dvh p-5 justify-between">

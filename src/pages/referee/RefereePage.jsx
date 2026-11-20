@@ -1,3 +1,4 @@
+import { broadcastMatchNotification, notifyPenalty } from '../../utils/notifications';
 import { useMatchdays } from '../../hooks/useMatchdays';
 import MatchdaySelector from '../../components/match/MatchdaySelector';
 import { useState, useMemo } from 'react';
@@ -154,6 +155,8 @@ export default function RefereePage() {
         homeScore: setupMatch.homeScore ?? 0,
         awayScore: setupMatch.awayScore ?? 0,
       });
+      void broadcastMatchNotification({ type:'kickoff', matchId:setupMatch.id, title:'🏁 انطلاق المباراة!',
+        body:`${getTeam(setupMatch.homeTeamId)?.nameAr} 🆚 ${getTeam(setupMatch.awayTeamId)?.nameAr} — تابع البث المباشر الآن!` });
       setSelectedMatchId(setupMatch.id);
       setSetupMatchId(null);
       showToast('انطلقت المباراة! الساعة متزامنة مباشرة الآن.');
@@ -190,12 +193,22 @@ export default function RefereePage() {
     setBusy(true);
     try {
       const snapshot = clock.getSnapshot();
-      const { finalType } = await recordPlayerMatchEvent({
+      const { finalType, homeScore, awayScore } = await recordPlayerMatchEvent({
         match: activeMatch,
         player,
         actionType,
         clockSnapshot: snapshot,
       });
+      const team = getTeam(player.teamId || player.team)?.nameAr || 'الفريق';
+      if (actionType === 'yellow' && finalType === 'red') {
+        void broadcastMatchNotification({ type:'yellow', matchId:activeMatch.id, title:`🟨 بطاقة صفراء (${snapshot.displayMinute})`,
+          body:`إنذار ثانٍ لـ ${player.nameAr} (${team})` });
+      }
+      const title = {goal:'⚽ جوووول!', yellow:'🟨 بطاقة صفراء', red:'🟥 طرد! بطاقة حمراء'}[finalType];
+      const body = finalType === 'goal'
+        ? `${player.nameAr} يسجل لـ ${team} • النتيجة: ${getTeam(activeMatch.homeTeamId)?.nameAr} ${homeScore} - ${awayScore} ${getTeam(activeMatch.awayTeamId)?.nameAr}`
+        : `${finalType === 'red' ? 'طرد' : 'إنذار لـ'} ${player.nameAr} (${team})`;
+      void broadcastMatchNotification({ type: finalType, matchId:activeMatch.id, title:`${title} (${snapshot.displayMinute})`, body });
       setActionModal({ type: null, subOffPlayerId: null });
       showToast(
         finalType === 'goal'
@@ -227,6 +240,8 @@ export default function RefereePage() {
         onPlayer,
         clockSnapshot: snapshot,
       });
+      void broadcastMatchNotification({ type:'sub', matchId:activeMatch.id, title:`🔄 تبديل (${snapshot.displayMinute})`,
+        body:`${getTeam(onPlayer.teamId)?.nameAr}: دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}` });
       setActionModal({ type: null, subOffPlayerId: null });
       showToast(`تبديل (${snapshot.displayMinute}): دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}`);
     } catch (err) {
@@ -252,6 +267,7 @@ export default function RefereePage() {
         reason: penaltyReason,
         clockSnapshot: snapshot,
       });
+      notifyPenalty(team?.nameAr || 'الفريق', penaltyPoints, penaltyReason, activeMatch.id);
       setActionModal({ type: null, subOffPlayerId: null });
       showToast(`تم خصم -${penaltyPoints} نقاط على ${team?.nameAr || 'الفريق'}.`);
     } catch (err) {
@@ -269,7 +285,7 @@ export default function RefereePage() {
     try {
       const snapshot = clock.getSnapshot();
       const withdrawingTeam = getTeam(forfeitTeamId);
-      await recordTeamForfeit({
+      const { homeScore, awayScore } = await recordTeamForfeit({
         match: activeMatch,
         bracketSlotId: actionModal.slot,
         withdrawingTeamId: forfeitTeamId,
@@ -278,6 +294,9 @@ export default function RefereePage() {
         pointsDeducted: forfeitDeduction,
         clockSnapshot: snapshot,
       });
+      void broadcastMatchNotification({ type:'forfeit', matchId:activeMatch.id, title:'🚨 انسحاب فريق!',
+        body:`انسحاب ${withdrawingTeam?.nameAr} واعتماد النتيجة ${homeScore} - ${awayScore}` });
+      if (forfeitDeduction > 0) notifyPenalty(withdrawingTeam?.nameAr, forfeitDeduction, 'انسحاب', activeMatch.id);
       setActionModal({ type: null, subOffPlayerId: null });
       setSelectedMatchId(null);
       showToast('تم تسجيل الانسحاب وإنهاء المباراة رسمياً.');
@@ -294,12 +313,14 @@ export default function RefereePage() {
     setBusy(true);
     try {
       const snapshot = clock.getSnapshot();
-      await endMatchManually({
+      const { homeScore, awayScore } = await endMatchManually({
         bracketSlotId: actionModal.slot,
         tiebreakWinnerId: actionModal.winnerId,
         match: activeMatch,
         clockSnapshot: snapshot,
       });
+      void broadcastMatchNotification({ type:'fulltime', matchId:activeMatch.id, title:'🏁 صافرة النهاية!',
+        body:`انتهت المباراة: ${getTeam(activeMatch.homeTeamId)?.nameAr} ${homeScore} - ${awayScore} ${getTeam(activeMatch.awayTeamId)?.nameAr}` });
       setActionModal({ type: null, subOffPlayerId: null });
       setSelectedMatchId(null);
       showToast('تم إطلاق صافرة النهاية وحفظ النتيجة.');

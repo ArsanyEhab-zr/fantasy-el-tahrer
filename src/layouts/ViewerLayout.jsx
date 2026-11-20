@@ -1,11 +1,13 @@
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import InstallAppButton from '../components/ui/InstallAppButton';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Menu, Radio, X } from 'lucide-react';
+import { Bell, Menu, Radio, X } from 'lucide-react';
 import { useTournament } from '../hooks/TournamentContext';
 import FantaLogo from '../components/ui/FantaLogo';
 
 export default function ViewerLayout() {
+  const push = usePushNotifications();
   const { pathname } = useLocation();
   const { liveMatch, settings } = useTournament();
   const [menuPath, setMenuPath] = useState(null);
@@ -51,10 +53,17 @@ export default function ViewerLayout() {
   return (
     <div dir="rtl" className="min-h-dvh bg-arena-stadium font-geist text-arena-ink">
       <header className={home ? 'absolute inset-x-0 top-0 z-30' : 'sticky top-0 z-30 border-b border-arena-border bg-arena-bg/95'}>
-        <div className="relative z-30 mx-auto flex max-w-screen-2xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] md:px-12 lg:px-16">
+        <div className="relative z-30 mx-auto flex flex-wrap sm:flex-nowrap max-w-screen-2xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] md:px-12 lg:px-16">
           <Link to="/" onClick={() => setOpen(false)} aria-label="فانتزي التحرير — الرئيسية"><FantaLogo size="sm" /></Link>
           <nav aria-label="التنقل الرئيسي" className="hidden gap-6 text-sm font-semibold md:flex">{menuLinks}</nav>
-          <InstallAppButton />
+          <div className="order-last flex basis-full items-center gap-1.5 sm:order-none sm:basis-auto">
+            <button type="button" onClick={push.enable} disabled={push.busy || push.active}
+              aria-label={push.active ? 'الإشعارات مفعّلة' : 'تفعيل الإشعارات'} title={push.active ? 'الإشعارات مفعّلة' : 'تفعيل الإشعارات'}
+              className={`inline-flex min-h-10 min-w-10 items-center justify-center gap-1 rounded-full border border-white/30 px-2 text-xs font-bold ${push.active ? 'text-emerald-300' : 'bg-black/50 text-white'}`}>
+              <Bell size={17} /><span className={push.active ? 'sr-only xl:not-sr-only' : ''}>{push.active ? 'الإشعارات مفعّلة' : 'تفعيل الإشعارات'}</span>
+            </button>
+            <InstallAppButton />
+          </div>
           <div className="hidden lg:block">{action}</div>
           <button ref={toggle} className="relative grid size-10 place-items-center rounded-lg text-white transition-transform active:scale-90 md:hidden"
             aria-expanded={open} aria-controls="viewer-menu" aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'} onClick={() => setOpen(!open)}>
@@ -68,6 +77,7 @@ export default function ViewerLayout() {
           </div>
         </nav>
       </header>
+      {push.notice && <div role="status" className="fixed inset-x-4 bottom-5 z-50 mx-auto max-w-md rounded-2xl border border-white/20 bg-slate-900 p-4 text-sm text-white shadow-lg">{push.notice}</div>}
       <main inert={open} className={home ? '' : 'mx-auto max-w-6xl px-4 py-8 sm:px-8'}><Outlet /></main>
     </div>
   );

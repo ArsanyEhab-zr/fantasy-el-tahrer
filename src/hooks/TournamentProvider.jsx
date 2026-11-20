@@ -8,7 +8,7 @@ import {
   normalizeTournamentSettings,
   normalizeMatch,
   normalizePlayer,
-  normalizePenalty,
+  normalizePenalty, syncPublicSnapshot,
 } from '../utils/tournamentSchema';
 import { parseTimestamp } from '../utils/formatters';
 
@@ -40,137 +40,44 @@ export function TournamentProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const resolvedStreams = new Set();
-    const markResolved = (key) => {
-      resolvedStreams.add(key);
-      if (resolvedStreams.size >= 7) {
+    function apply(key, data) {
+      switch (key) {
+        case 'settings': setSettings(normalizeTournamentSettings(data)); break;
+        case 'bracket': setBracketConfig({ ...DEFAULT_BRACKET_CONFIG, ...data }); break;
+        case 'teams': setTeams(data); break;
+        case 'players': setRawPlayers(data.map(d => normalizePlayer(d, d.id))); break;
+        case 'matches': setMatches(data.map(d => normalizeMatch(d, d.id))); break;
+        case 'groups': setRawGroups(data.map(d => ({ ...d, teams: (d.teams || []).map(String) }))
+          .sort((a,b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.name || a.id).localeCompare(b.name || b.id,'ar'))); break;
+        case 'penalties': setPenalties(data.map(d => normalizePenalty(d, d.id))
+          .sort((a,b) => (parseTimestamp(b.createdAt)?.getTime() || 0) - (parseTimestamp(a.createdAt)?.getTime() || 0))); break;
+      }
+    }
+    const keys = ['settings', 'bracket', 'teams', 'players', 'matches', 'groups', 'penalties'];
+    if ((import.meta.env.VITE_APP_TARGET || 'viewer') === 'viewer') {
+      return onSnapshot(doc(db, 'public/live_snapshot'), snap => {
+        if (!snap.exists() && snap.metadata.fromCache && navigator.onLine) return;
+        const data = snap.data() || {};
+        for (const key of keys) apply(key, data[key] || (['settings', 'bracket'].includes(key) ? {} : []));
         setLoading(false);
-      }
-    };
-
-    // 1. Global Tournament Settings (Safe default if config/tournament doesn't exist yet)
-    const unsubTournamentConfig = onSnapshot(
-      doc(db, 'config', 'tournament'),
-      (docSnap) => {
-        setSettings(
-          docSnap.exists()
-            ? normalizeTournamentSettings(docSnap.data())
-            : { ...DEFAULT_TOURNAMENT_SETTINGS }
-        );
-        markResolved('tournamentConfig');
-      },
-      (err) => {
-        console.error('config/tournament listener error:', err);
-        setSettings({ ...DEFAULT_TOURNAMENT_SETTINGS });
-        markResolved('tournamentConfig');
-      }
-    );
-
-    // 2. Bracket Size Config
-    const unsubBracketConfig = onSnapshot(
-      doc(db, 'config', 'bracket'),
-      (docSnap) => {
-        setBracketConfig(
-          docSnap.exists()
-            ? { ...DEFAULT_BRACKET_CONFIG, ...docSnap.data() }
-            : { ...DEFAULT_BRACKET_CONFIG }
-        );
-        markResolved('bracketConfig');
-      },
-      (err) => {
-        console.error('config/bracket listener error:', err);
-        markResolved('bracketConfig');
-      }
-    );
-
-    // 3. Teams
-    const unsubTeams = onSnapshot(
-      collection(db, 'teams'),
-      (snap) => {
-        setTeams(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
-        markResolved('teams');
-      },
-      (err) => {
-        console.error('teams listener error:', err);
-        markResolved('teams');
-      }
-    );
-
-    // 4. Players
-    const unsubPlayers = onSnapshot(
-      collection(db, 'players'),
-      (snap) => {
-        setRawPlayers(snap.docs.map((d) => normalizePlayer(d.data(), d.id)));
-        markResolved('players');
-      },
-      (err) => {
-        console.error('players listener error:', err);
-        markResolved('players');
-      }
-    );
-
-    // 5. Matches
-    const unsubMatches = onSnapshot(
-      collection(db, 'matches'),
-      (snap) => {
-        setMatches(snap.docs.map((d) => normalizeMatch(d.data({ serverTimestamps: 'estimate' }), d.id)));
-        markResolved('matches');
-      },
-      (err) => {
-        console.error('matches listener error:', err);
-        markResolved('matches');
-      }
-    );
-
-    // 6. Groups
-    const unsubGroups = onSnapshot(
-      collection(db, 'groups'),
-      (snap) => {
-        const list = snap.docs.map((d) => ({
-          ...d.data(),
-          id: d.id,
-          teams: Array.isArray(d.data()?.teams) ? d.data().teams.map(String) : [],
-        }));
-        list.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.name || a.id || '').localeCompare(b.name || b.id || '', 'ar'));
-        setRawGroups(list);
-        markResolved('groups');
-      },
-      (err) => {
-        console.error('groups listener error:', err);
-        markResolved('groups');
-      }
-    );
-
-    // 7. Disciplinary Penalties (Safe if collection doesn't exist yet)
-    const unsubPenalties = onSnapshot(
-      collection(db, 'penalties'),
-      (snap) => {
-        const list = snap.docs
-          .map((d) => normalizePenalty(d.data(), d.id))
-          .sort((a, b) => {
-            const ta = parseTimestamp(a.createdAt)?.getTime() ?? 0;
-            const tb = parseTimestamp(b.createdAt)?.getTime() ?? 0;
-            return tb - ta;
-          });
-        setPenalties(list);
-        markResolved('penalties');
-      },
-      (err) => {
-        console.error('penalties listener error:', err);
-        setPenalties([]);
-        markResolved('penalties');
-      }
-    );
-
-    return () => {
-      unsubTournamentConfig();
-      unsubBracketConfig();
-      unsubTeams();
-      unsubPlayers();
-      unsubMatches();
-      unsubGroups();
-      unsubPenalties();
-    };
+      }, error => { console.error('Live snapshot:', error.code); setLoading(false); });
+    }
+    const ready = new Set();
+    function resolved(key) {
+      ready.add(key);
+      if (ready.size === keys.length) setLoading(false);
+    }
+    const stops = keys.map(key => {
+      const single = key === 'settings' || key === 'bracket';
+      const ref = single ? doc(db, 'config', key === 'settings' ? 'tournament' : key) : collection(db, key);
+      return onSnapshot(ref, { includeMetadataChanges: true }, snap => {
+        const data = single ? snap.data() || {} : snap.docs.map(d => ({ ...d.data({ serverTimestamps: 'estimate' }), id: d.id }));
+        apply(key, data);
+        resolved(key);
+        if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) syncPublicSnapshot(key);
+      }, error => { console.error(key, error.code); resolved(key); });
+    });
+    return () => stops.forEach(stop => stop());
   }, []);
 
   // Fast Lookup Maps

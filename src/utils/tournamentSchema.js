@@ -1,5 +1,5 @@
 import {
-  collection,
+  collection, getDocsFromServer,
   doc,
   runTransaction,
   setDoc,
@@ -7,6 +7,7 @@ import {
   arrayUnion,
   serverTimestamp,
 } from 'firebase/firestore';
+import { publishSnapshot, sections } from './publicSnapshot.js';
 import { db } from './firebase';
 
 /**
@@ -336,7 +337,7 @@ export const recordPlayerMatchEvent = async ({
     }
 
     tx.update(ref, updates);
-    return { finalType };
+    return { finalType, homeScore: updates.homeScore ?? match.homeScore, awayScore: updates.awayScore ?? match.awayScore };
   });
 };
 
@@ -556,8 +557,36 @@ async function finishMatch({ match: selected, clockSnapshot, tiebreakWinnerId, b
         `النتيجة النهائية: ${match.homeScore} - ${match.awayScore}`,
     });
     tx.update(ref, updates);
+    return { homeScore: updates.homeScore ?? match.homeScore, awayScore: updates.awayScore ?? match.awayScore };
   });
 }
 
 export const endMatchManually = finishMatch;
 export const recordTeamForfeit = finishMatch;
+
+// Staff streams coalesce server-confirmed changes. The transaction retries against newer publications.
+const pendingSections = new Set();
+let publishTimer;
+let publishing = false;
+let retryDelay = 300;
+export function syncPublicSnapshot(section) {
+  for (const key of section ? [section] : sections) pendingSections.add(key);
+  if (publishing || publishTimer) return;
+  publishTimer = setTimeout(async () => {
+    publishTimer = undefined;
+    publishing = true;
+    const changed = [...pendingSections];
+    pendingSections.clear();
+    try {
+      await publishSnapshot(db, { doc, collection, runTransaction, getDocs: getDocsFromServer, serverTimestamp }, changed);
+      retryDelay = 300;
+    } catch (error) {
+      console.error('Public snapshot sync failed:', error.code);
+      changed.forEach(key => pendingSections.add(key));
+      retryDelay = Math.min(30000, retryDelay * 2);
+    } finally {
+      publishing = false;
+      if (pendingSections.size) syncPublicSnapshot([...pendingSections][0]);
+    }
+  }, retryDelay);
+}

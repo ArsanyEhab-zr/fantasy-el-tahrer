@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // These should be set in your .env.local file with Vite's VITE_ prefix.
@@ -21,4 +21,7 @@ if (!import.meta.env.VITE_FIREBASE_API_KEY) {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: typeof indexedDB === 'undefined' ? memoryLocalCache()
+    : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});

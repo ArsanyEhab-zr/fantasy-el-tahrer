@@ -12,20 +12,27 @@ const apps = {
 }
 
 export default defineConfig(({ mode }) => {
-  const target = loadEnv(mode, process.cwd(), 'VITE_APP_TARGET').VITE_APP_TARGET ?? 'viewer'
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const target = env.VITE_APP_TARGET ?? 'viewer'
+  const firebaseConfig = { apiKey: env.VITE_FIREBASE_API_KEY, projectId: env.VITE_FIREBASE_PROJECT_ID,
+    appId: env.VITE_FIREBASE_APP_ID, messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID }
   if (!Object.hasOwn(apps, target)) throw new Error('VITE_APP_TARGET must be viewer, admin, or referee')
   const app = apps[target]
   const icons = 'icons/' + target
   const logos = readdirSync(new URL('./public/logos/', import.meta.url))
     .filter(file => file.endsWith('.svg')).sort().map(file => 'logos/' + file)
-  const files = [...logos, '_redirects', 'brand/icon-192.png', 'brand/stadium.webp',
-    ...['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
+  const files = [...logos, '_redirects', 'league-logo.webp', 'league-logo.png', 'brand/stadium.webp',
+    ...['favicon.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
   if (target === 'viewer') {
+    files.push('firebase-messaging-sw.js')
     files.push(...['portrait', 'wide', 'pitch', 'ball-frames'].map(file => 'brand/matchday/' + file + '.webp'))
   }
 
   return {
-    define: { __CREST_URLS__: JSON.stringify(logos.map(file => '/' + file)) },
+    define: {
+      __VERCEL_PIN_CHECK__: Boolean(process.env.VERCEL),
+      __STAFF_PIN_LENGTH__: (target === 'admin' ? env.VITE_ADMIN_PIN || '2026' : env.VITE_REFEREE_PIN || '1111').length,
+      __CREST_URLS__: JSON.stringify(logos.map(file => '/' + file)) },
     resolve: { alias: { '@app-routes': fileURLToPath(new URL('./src/routes/' + target + '.jsx', import.meta.url)) } },
     build: {
       copyPublicDir: false,
@@ -44,10 +51,16 @@ export default defineConfig(({ mode }) => {
         transformIndexHtml: () => [
           { tag: 'title', children: app.name },
           { tag: 'meta', attrs: { name: 'theme-color', content: app.theme } },
-          { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/' + icons + '/icon.svg' } },
+          { tag: 'link', attrs: { rel: 'icon', type: 'image/png', href: '/' + icons + '/favicon.png' } },
           { tag: 'link', attrs: { rel: 'apple-touch-icon', sizes: '180x180', href: '/' + icons + '/apple-touch-icon.png' } },
         ],
         generateBundle() {
+          if (target === 'viewer') {
+            this.emitFile({type:'asset',fileName:'push/config.js',source:'self.fantaFirebaseConfig=' + JSON.stringify(firebaseConfig)})
+            for (const name of ['firebase-app-compat.js','firebase-messaging-compat.js']) {
+              this.emitFile({type:'asset',fileName:'push/' + name,source:readFileSync(new URL('./node_modules/firebase/' + name,import.meta.url))})
+            }
+          }
           for (const fileName of files) {
             this.emitFile({ type: 'asset', fileName, source: readFileSync(new URL('./public/' + fileName, import.meta.url)) })
           }
@@ -56,6 +69,8 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: {
+          importScripts: target === 'viewer' ? ['/firebase-messaging-sw.js'] : [],
+          navigateFallbackDenylist: [/^\/api\//],
           skipWaiting: true, clientsClaim: true, cleanupOutdatedCaches: true,
           globPatterns: ['**/*.{js,css,html,woff2,webp,png,svg}'],
         },
