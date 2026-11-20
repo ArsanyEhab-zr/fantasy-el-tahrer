@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 
-const source = 'public/logo.png';
+const source = 'public/brand/crest.png';
 const fit = { fit: 'contain', background: '#00000000' };
 const trimmed = await sharp(source).trim().png().toBuffer();
 await sharp(trimmed).resize(256, 256, fit).webp({ quality: 88 }).toFile('public/league-logo.webp');
@@ -10,7 +10,7 @@ const badge = {
   referee: '<circle cx="394" cy="394" r="78" fill="#12161b" stroke="#d4ff53" stroke-width="7"/><rect x="350" y="348" width="53" height="85" rx="7" fill="#ffd541" transform="rotate(-16 376 390)"/><rect x="397" y="355" width="52" height="84" rx="7" fill="#ff4355" transform="rotate(11 422 396)"/>',
 };
 for (const target of ['viewer','admin','referee']) {
-  const layers = [{input:await sharp(trimmed).resize(358,358,fit).png().toBuffer(),gravity:'center'}];
+  const layers = [{input:await sharp(trimmed).resize(412,412,fit).png().toBuffer(),gravity:'center'}];
   if (badge[target]) {
     const ring = target === 'admin' ? '#e9bd59' : '#cefa52';
     const inner = target === 'admin' ? '#fff1b7' : '#f24855';
@@ -20,4 +20,10 @@ for (const target of ['viewer','admin','referee']) {
   for (const [name,size] of [['icon-192',192],['icon-512',512],['apple-touch-icon',180],['favicon',48]]) {
     await sharp(icon).resize(size,size).png({palette:true}).toFile('public/icons/'+target+'/'+name+'.png');
   }
+  // Keep the entire crest and role badge inside the Android maskable safe circle.
+  const safeIcon = await sharp(icon).resize(360,360).png().toBuffer();
+  await sharp({create:{width:512,height:512,channels:4,background:'#0B0D12'}})
+    .composite([{input:safeIcon,gravity:'center'}]).png({palette:true})
+    .toFile('public/icons/'+target+'/maskable-512.png');
+
 }

@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -6,9 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const apps = {
-  viewer: { name: 'فانتا | Fanta', shortName: 'Fanta', theme: '#0B0D12', background: '#0B0D12' },
-  admin: { name: 'فانتا الإدارة | Fanta Admin', shortName: 'Fanta Admin', theme: '#111827', background: '#F5F2EB' },
-  referee: { name: 'فانتا الحكم | Fanta Ref', shortName: 'Fanta Ref', theme: '#080A0E', background: '#080A0E' },
+  viewer: { name: 'فانتزي التحرير', theme: '#0B0D12', background: '#0B0D12' },
+  admin: { name: 'إدارة الفنتازي', theme: '#111827', background: '#F5F2EB' },
+  referee: { name: 'حكم الفنتازي', theme: '#080A0E', background: '#080A0E' },
 }
 
 export default defineConfig(({ mode }) => {
@@ -19,10 +20,16 @@ export default defineConfig(({ mode }) => {
   if (!Object.hasOwn(apps, target)) throw new Error('VITE_APP_TARGET must be viewer, admin, or referee')
   const app = apps[target]
   const icons = 'icons/' + target
+  const iconUrl = file => {
+    const path = icons + '/' + file
+    const bytes = readFileSync(new URL('./public/' + path, import.meta.url))
+    const revision = createHash('sha256').update(bytes).digest('hex').slice(0, 12)
+    return '/' + path + '?v=' + revision
+  }
   const logos = readdirSync(new URL('./public/logos/', import.meta.url))
     .filter(file => file.endsWith('.svg')).sort().map(file => 'logos/' + file)
   const files = [...logos, '_redirects', 'league-logo.webp', 'league-logo.png', 'brand/stadium.webp',
-    ...['favicon.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
+    ...['favicon.png', 'icon-192.png', 'icon-512.png', 'maskable-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
   if (target === 'viewer') {
     files.push('firebase-messaging-sw.js')
     files.push(...['portrait', 'wide', 'pitch', 'ball-frames'].map(file => 'brand/matchday/' + file + '.webp'))
@@ -30,6 +37,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     define: {
+      __APP_NAME__: JSON.stringify(app.name),
       __VERCEL_PIN_CHECK__: Boolean(process.env.VERCEL),
       __STAFF_PIN_LENGTH__: (target === 'admin' ? env.VITE_ADMIN_PIN || '2026' : env.VITE_REFEREE_PIN || '1111').length,
       __CREST_URLS__: JSON.stringify(logos.map(file => '/' + file)) },
@@ -50,9 +58,11 @@ export default defineConfig(({ mode }) => {
         name: 'fanta-target-assets',
         transformIndexHtml: () => [
           { tag: 'title', children: app.name },
+          { tag: 'meta', attrs: { name: 'application-name', content: app.name } },
+          { tag: 'meta', attrs: { name: 'apple-mobile-web-app-title', content: app.name } },
           { tag: 'meta', attrs: { name: 'theme-color', content: app.theme } },
-          { tag: 'link', attrs: { rel: 'icon', type: 'image/png', href: '/' + icons + '/favicon.png' } },
-          { tag: 'link', attrs: { rel: 'apple-touch-icon', sizes: '180x180', href: '/' + icons + '/apple-touch-icon.png' } },
+          { tag: 'link', attrs: { rel: 'icon', type: 'image/png', href: iconUrl('favicon.png') } },
+          { tag: 'link', attrs: { rel: 'apple-touch-icon', sizes: '180x180', href: iconUrl('apple-touch-icon.png') } },
         ],
         generateBundle() {
           if (target === 'viewer') {
@@ -70,17 +80,18 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         workbox: {
           importScripts: target === 'viewer' ? ['/firebase-messaging-sw.js'] : [],
+          ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
           navigateFallbackDenylist: [/^\/api\//],
           skipWaiting: true, clientsClaim: true, cleanupOutdatedCaches: true,
           globPatterns: ['**/*.{js,css,html,woff2,webp,png,svg}'],
         },
         manifest: {
-          id: 'fanta-' + target + '-pwa', name: app.name, short_name: app.shortName,
+          id: 'fanta-' + target + '-pwa', name: app.name, short_name: app.name,
           lang: 'ar', dir: 'rtl', theme_color: app.theme, background_color: app.background,
           start_url: '/', scope: '/', display: 'standalone', orientation: 'portrait',
           icons: [192, 512].map(size => ({
-            src: `/${icons}/icon-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any maskable',
-          })),
+            src: iconUrl(`icon-${size}.png`), sizes: `${size}x${size}`, type: 'image/png', purpose: 'any',
+          })).concat({src: iconUrl('maskable-512.png'), sizes:'512x512', type:'image/png', purpose:'maskable'}),
         },
       }),
     ],
