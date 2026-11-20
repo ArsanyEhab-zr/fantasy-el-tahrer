@@ -10,18 +10,20 @@ const badge = {
   referee: '<circle cx="394" cy="394" r="78" fill="#12161b" stroke="#d4ff53" stroke-width="7"/><rect x="350" y="348" width="53" height="85" rx="7" fill="#ffd541" transform="rotate(-16 376 390)"/><rect x="397" y="355" width="52" height="84" rx="7" fill="#ff4355" transform="rotate(11 422 396)"/>',
 };
 for (const target of ['viewer','admin','referee']) {
-  const layers = [{input:await sharp(trimmed).resize(412,412,fit).png().toBuffer(),gravity:'center'}];
+  const layers = [{input:await sharp(trimmed).resize(504,504,fit).png().toBuffer(),gravity:'center'}];
   if (badge[target]) {
     const ring = target === 'admin' ? '#e9bd59' : '#cefa52';
     const inner = target === 'admin' ? '#fff1b7' : '#f24855';
     layers.push({input:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><circle cx="256" cy="256" r="236" fill="none" stroke="'+ring+'" stroke-width="12"/><circle cx="256" cy="256" r="224" fill="none" stroke="'+inner+'" stroke-width="3"/>'+badge[target]+'</svg>')});
   }
-  const icon = await sharp({create:{width:512,height:512,channels:4,background:'#0B0D12'}}).composite(layers).png().toBuffer();
+  const icon = await sharp({create:{width:512,height:512,channels:4,background:'#00000000'}}).composite(layers).png().toBuffer();
   for (const [name,size] of [['icon-192',192],['icon-512',512],['apple-touch-icon',180],['favicon',48]]) {
-    await sharp(icon).resize(size,size).png({palette:true}).toFile('public/icons/'+target+'/'+name+'.png');
+    const output = sharp(icon).resize(size,size);
+    if (name === 'apple-touch-icon') output.flatten({background:'#0B0D12'});
+    await output.png({palette:true}).toFile('public/icons/'+target+'/'+name+'.png');
   }
   // Keep the entire crest and role badge inside the Android maskable safe circle.
-  const safeIcon = await sharp(icon).resize(360,360).png().toBuffer();
+  const safeIcon = await sharp(icon).resize(408,408).png().toBuffer();
   await sharp({create:{width:512,height:512,channels:4,background:'#0B0D12'}})
     .composite([{input:safeIcon,gravity:'center'}]).png({palette:true})
     .toFile('public/icons/'+target+'/maskable-512.png');
