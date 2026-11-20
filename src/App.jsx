@@ -1,24 +1,31 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useLayoutEffect } from 'react';
-import HomePage from './pages/HomePage.jsx';
-import LiveMatchPage from './pages/LiveMatchPage.jsx';
-import StandingsPage from './pages/StandingsPage.jsx';
-import BracketPage from './pages/BracketPage.jsx';
-import TopScorersPage from './pages/TopScorersPage.jsx';
-import PlayerProfilePage from './pages/PlayerProfilePage.jsx';
-import RefereePage from './pages/RefereePage.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import ManageTeams from './pages/admin/ManageTeams.jsx';
-import ManagePlayers from './pages/admin/ManagePlayers.jsx';
-import CreateMatch from './pages/admin/CreateMatch.jsx';
-import ManageGroups from './pages/admin/ManageGroups.jsx';
-import ManageBracket from './pages/admin/ManageBracket.jsx';
-import ManageMatches from './pages/admin/ManageMatches.jsx';
-import OverridePlayerStats from './pages/admin/OverridePlayerStats.jsx';
-import { TournamentProvider } from './hooks/TournamentContext.jsx';
-import BottomNav from './components/layout/BottomNav.jsx';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useLayoutEffect, lazy, Suspense } from 'react';
+import { MotionConfig } from 'framer-motion';
+import { TournamentProvider } from './hooks/TournamentProvider.jsx';
 
-// Scroll to top on route change
+// 3 Completely Separated App Shells (Code-split Admin & Referee so Fans load fast!)
+import ViewerLayout from './layouts/ViewerLayout.jsx';
+import HomePage from './pages/viewer/HomePage.jsx';
+import LiveMatchPage from './pages/viewer/LiveMatchPage.jsx';
+import StandingsPage from './pages/viewer/StandingsPage.jsx';
+import TopScorersPage from './pages/viewer/TopScorersPage.jsx';
+import PlayerProfilePage from './pages/viewer/PlayerProfilePage.jsx';
+import BracketPage from './pages/viewer/BracketPage.jsx';
+
+// Lazy-loaded Admin Portal (/admin/*)
+const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.jsx'));
+const ManageTeams = lazy(() => import('./pages/admin/ManageTeams.jsx'));
+const ManagePlayers = lazy(() => import('./pages/admin/ManagePlayers.jsx'));
+const ManageGroups = lazy(() => import('./pages/admin/ManageGroups.jsx'));
+const ManageMatches = lazy(() => import('./pages/admin/ManageMatches.jsx'));
+const ManageBracket = lazy(() => import('./pages/admin/ManageBracket.jsx'));
+const ManageDiscipline = lazy(() => import('./pages/admin/ManageDiscipline.jsx'));
+
+// Lazy-loaded Referee Pitch Controller (/referee/*)
+const RefereeLayout = lazy(() => import('./layouts/RefereeLayout.jsx'));
+const RefereePage = lazy(() => import('./pages/referee/RefereePage.jsx'));
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useLayoutEffect(() => {
@@ -27,41 +34,65 @@ function ScrollToTop() {
   return null;
 }
 
+function RouteFallback() {
+  return (
+    <div
+      dir="rtl"
+      className="min-h-dvh w-full bg-arena-bg text-arena-ink flex items-center justify-center p-6"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full border-4 border-fanta-orange border-t-transparent animate-spin" />
+        <span className="font-display font-bold text-sm text-arena-muted">
+          جاري تحميل البوابة…
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-neutral-900 flex items-center justify-center w-full">
-        {/* The Mobile Phone Frame */}
-        <div dir="rtl" className="w-full max-w-[390px] h-[100dvh] bg-scrap-paper-warm relative flex flex-col overflow-hidden shadow-2xl border-x border-black/20">
-          
-          {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
-            <ScrollToTop />
-            <TournamentProvider>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/live" element={<LiveMatchPage />} />
-                <Route path="/standings" element={<StandingsPage />} />
-                <Route path="/bracket" element={<BracketPage />} />
-                <Route path="/scorers" element={<TopScorersPage />} />
-                <Route path="/player/:id" element={<PlayerProfilePage />} />
-                <Route path="/referee" element={<RefereePage />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/teams" element={<ManageTeams />} />
-                <Route path="/admin/players" element={<ManagePlayers />} />
-                <Route path="/admin/create-match" element={<CreateMatch />} />
-                <Route path="/admin/groups" element={<ManageGroups />} />
-                <Route path="/admin/bracket" element={<ManageBracket />} />
-                <Route path="/admin/matches" element={<ManageMatches />} />
-                <Route path="/admin/stats" element={<OverridePlayerStats />} />
-              </Routes>
-            </TournamentProvider>
-          </div>
+    <MotionConfig reducedMotion="user">
+      <TournamentProvider>
+        <Router>
+          <ScrollToTop />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              {/* APP 1: FANTA VIEWER (Public Fan Experience) */}
+              <Route path="/" element={<ViewerLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path="live" element={<LiveMatchPage />} />
+                <Route path="standings" element={<StandingsPage />} />
+                <Route path="scorers" element={<TopScorersPage />} />
+                <Route path="bracket" element={<BracketPage />} />
+                <Route path="player/:id" element={<PlayerProfilePage />} />
+              </Route>
 
-          {/* Static Bottom Nav */}
-          <BottomNav />
-        </div>
-      </div>
-    </Router>
+              {/* APP 2: FANTA ADMIN (League Operations Portal) */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="teams" element={<ManageTeams />} />
+                <Route path="players" element={<ManagePlayers />} />
+                <Route path="groups" element={<ManageGroups />} />
+                <Route path="matches" element={<ManageMatches />} />
+                <Route path="bracket" element={<ManageBracket />} />
+                <Route path="discipline" element={<ManageDiscipline />} />
+                <Route path="create-match" element={<Navigate to="/admin/matches" replace />} />
+                <Route path="stats" element={<Navigate to="/admin/discipline" replace />} />
+              </Route>
+
+              {/* APP 3: FANTA REFEREE (Mobile-First Pitch Controller) */}
+              <Route path="/referee" element={<RefereeLayout />}>
+                <Route index element={<RefereePage />} />
+                <Route path="*" element={<Navigate to="/referee" replace />} />
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </TournamentProvider>
+    </MotionConfig>
   );
 }

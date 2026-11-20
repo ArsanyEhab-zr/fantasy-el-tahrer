@@ -1,181 +1,317 @@
-import { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { Users, Plus, Pencil, Trash2, Search, CheckCircle2 } from 'lucide-react';
 import { db } from '../../utils/firebase';
-import ScrapbookPage from '../../components/layout/ScrapbookPage';
-import ScrapbookHeader from '../../components/layout/ScrapbookHeader';
-import CardboardContainer from '../../components/primitives/CardboardContainer';
-import TornPaperButton from '../../components/primitives/TornPaperButton';
-import MaskingTape from '../../components/primitives/MaskingTape';
+import { useTournament } from '../../hooks/TournamentContext';
+import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
+const POSITIONS = ['حارس مرمى', 'مدافع', 'لاعب وسط', 'مهاجم'];
+
+/**
+ * ManagePlayers — Roster Management (/admin/players).
+ * Cleanly creates & edits player profiles (Name, Team, Position, Jersey # — ZERO Assists).
+ */
 export default function ManagePlayers() {
-  const [players, setPlayers] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Form State
+  const [searchParams] = useSearchParams();
+  const initialTeamFilter = searchParams.get('team') || 'all';
+
+  return <PlayerRoster key={initialTeamFilter} initialTeamFilter={initialTeamFilter} />;
+}
+
+function PlayerRoster({ initialTeamFilter }) {
+  const { teams = [], players = [], loading, getTeam } = useTournament();
+
+  const [filterTeam, setFilterTeam] = useState(initialTeamFilter);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [editingId, setEditingId] = useState(null);
   const [nameAr, setNameAr] = useState('');
-  const [position, setPosition] = useState('');
+  const [position, setPosition] = useState('مهاجم');
   const [jerseyNumber, setJerseyNumber] = useState('');
-  const [teamId, setTeamId] = useState('');
+  const [teamId, setTeamId] = useState(initialTeamFilter !== 'all' ? initialTeamFilter : '');
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
-  useEffect(() => {
-    const unsubTeams = onSnapshot(collection(db, 'teams'), (snap) => {
-      setTeams(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    });
-    const unsubPlayers = onSnapshot(collection(db, 'players'), (snap) => {
-      setPlayers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-      setLoading(false);
-    });
-    return () => {
-      unsubTeams();
-      unsubPlayers();
-    };
-  }, []);
+  const resetForm = () => {
+    setEditingId(null);
+    setNameAr('');
+    setPosition('مهاجم');
+    setJerseyNumber('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!nameAr.trim() || !teamId) return;
+    setSaving(true);
+    setFeedback(null);
     try {
-      const payload = { 
-        nameAr, 
-        position, 
-        jerseyNumber: parseInt(jerseyNumber) || 0,
+      const payload = {
+        nameAr: nameAr.trim(),
+        position: position.trim() || 'لاعب',
+        jerseyNumber: parseInt(jerseyNumber, 10) || 0,
         team: teamId,
-        // Default tournament stats for new players
-        goals: editingId ? undefined : 0,
-        assists: editingId ? undefined : 0
+        teamId,
       };
-      
-      // Clean undefined fields
-      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-
       if (editingId) {
         await updateDoc(doc(db, 'players', String(editingId)), payload);
+        setFeedback({ type: 'success', text: 'تم تحديث بيانات اللاعب.' });
       } else {
-        await addDoc(collection(db, 'players'), payload);
+        await addDoc(collection(db, 'players'), { ...payload, goals: 0 });
+        setFeedback({ type: 'success', text: 'تمت إضافة اللاعب إلى قائمة الفريق.' });
       }
       resetForm();
-      alert('تم بنجاح');
     } catch (err) {
-      console.error("FIREBASE ERROR:", err);
-      alert(err.message);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure?")) {
-      try {
-        await deleteDoc(doc(db, 'players', String(id)));
-        alert('تم الحذف بنجاح');
-      } catch (err) {
-        console.error("FIREBASE ERROR:", err);
-        alert(err.message);
-      }
+      setFeedback({ type: 'error', text: err.message || 'فشل حفظ اللاعب.' });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleEdit = (player) => {
     setEditingId(player.id);
-    setNameAr(player.nameAr);
-    setPosition(player.position || '');
-    setJerseyNumber(player.jerseyNumber || '');
-    setTeamId(player.team || '');
+    setNameAr(player.nameAr || '');
+    setPosition(player.position || 'مهاجم');
+    setJerseyNumber(player.jerseyNumber != null ? String(player.jerseyNumber) : '');
+    setTeamId(player.teamId || player.team || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setNameAr('');
-    setPosition('');
-    setJerseyNumber('');
-    setTeamId('');
+  const handleDelete = async (player) => {
+    if (!window.confirm(`حذف اللاعب "${player.nameAr}" نهائياً؟`)) return;
+    try {
+      await deleteDoc(doc(db, 'players', String(player.id)));
+      setFeedback({ type: 'success', text: `تم حذف ${player.nameAr}.` });
+    } catch (err) {
+      setFeedback({ type: 'error', text: err.message || 'فشل حذف اللاعب.' });
+    }
   };
 
-  const getTeamName = (id) => teams.find(t => t.id === id)?.nameAr || 'بدون فريق';
+  const filteredPlayers = players.filter((p) => {
+    const pTeam = p.teamId || p.team;
+    const matchesTeam = filterTeam === 'all' || pTeam === filterTeam;
+    const matchesSearch = !searchTerm.trim() || (p.nameAr || '').includes(searchTerm.trim());
+    return matchesTeam && matchesSearch;
+  });
 
   return (
-    <ScrapbookPage>
-      <ScrapbookHeader title="إدارة اللاعبين" showBack backTo="/admin" />
+    <div className="space-y-6">
+      <div>
+        <span className="text-xs font-display font-extrabold tracking-widest uppercase text-fanta-orange">
+          ROSTERS
+        </span>
+        <h1 className="font-display font-extrabold text-3xl text-ops-ink leading-tight">
+          قوائم اللاعبين
+        </h1>
+      </div>
 
-      <div className="flex flex-col gap-6 mt-4">
-        <CardboardContainer variant="note" className="p-4 relative animate-fade-in-up">
-          <MaskingTape color="magenta" position="top-right" width="40px" rotation={-10} />
-          <h2 className="text-stamp text-xl mb-4">{editingId ? 'تعديل اللاعب' : 'إضافة لاعب جديد'}</h2>
-          
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input 
-              required 
-              placeholder="اسم اللاعب"
-              className="w-full p-2 border-2 border-scrap-ink rounded bg-white/50 focus:bg-white text-marker"
-              value={nameAr} onChange={e => setNameAr(e.target.value)}
-            />
-            
-            <select 
-              required 
-              className="w-full p-2 border-2 border-scrap-ink rounded bg-white/50 focus:bg-white text-marker"
-              value={teamId} onChange={e => setTeamId(e.target.value)}
-            >
-              <option value="" disabled>اختر الفريق</option>
-              {teams.map(t => (
-                <option key={t.id} value={t.id}>{t.emoji} {t.nameAr}</option>
-              ))}
-            </select>
+      {/* Add / Edit Player Form */}
+      <section className="glass-card rounded-3xl bg-ops-surface border-2 border-ops-border p-5 sm:p-6 shadow-[0_6px_22px_-8px_rgba(17,20,28,0.08)]">
+        <h2 className="font-display font-extrabold text-xl text-ops-ink mb-4">
+          {editingId ? 'تعديل بيانات اللاعب' : 'إضافة لاعب جديد'}
+        </h2>
 
-            <div className="flex gap-3">
-              <input 
-                required 
-                placeholder="المركز (مهاجم، دفاع...)"
-                className="w-2/3 p-2 border-2 border-scrap-ink rounded bg-white/50 focus:bg-white text-marker"
-                value={position} onChange={e => setPosition(e.target.value)}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+            <div className="sm:col-span-4">
+              <label htmlFor="player-name" className="block text-xs font-bold text-ops-ink mb-1.5">
+                اسم اللاعب
+              </label>
+              <input
+                id="player-name"
+                required
+                value={nameAr}
+                onChange={(e) => setNameAr(e.target.value)}
+                placeholder="مثال: أحمد علي"
+                className="w-full h-12 px-3.5 rounded-xl border-2 border-ops-border bg-ops-bg focus:bg-ops-subtle focus:border-fanta-orange text-ops-ink font-semibold"
               />
-              <input 
-                required 
+            </div>
+
+            <div className="sm:col-span-4">
+              <label htmlFor="player-team" className="block text-xs font-bold text-ops-ink mb-1.5">
+                الفريق
+              </label>
+              <select
+                id="player-team"
+                required
+                value={teamId}
+                onChange={(e) => setTeamId(e.target.value)}
+                className="w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg focus:bg-ops-subtle focus:border-fanta-orange text-ops-ink font-semibold"
+              >
+                <option value="" disabled>
+                  اختر الفريق
+                </option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nameAr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="player-pos" className="block text-xs font-bold text-ops-ink mb-1.5">
+                المركز
+              </label>
+              <select
+                id="player-pos"
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                className="w-full h-12 px-2.5 rounded-xl border-2 border-ops-border bg-ops-bg focus:bg-ops-subtle focus:border-fanta-orange text-ops-ink font-semibold"
+              >
+                {POSITIONS.map((pos) => (
+                  <option key={pos} value={pos}>
+                    {pos}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="player-num" className="block text-xs font-bold text-ops-ink mb-1.5">
+                رقم القميص
+              </label>
+              <input
+                id="player-num"
                 type="number"
-                placeholder="الرقم"
-                className="w-1/3 p-2 border-2 border-scrap-ink rounded bg-white/50 focus:bg-white text-center text-marker"
-                value={jerseyNumber} onChange={e => setJerseyNumber(e.target.value)}
+                min={0}
+                max={99}
+                required
+                value={jerseyNumber}
+                onChange={(e) => setJerseyNumber(e.target.value)}
+                placeholder="10"
+                className="w-full h-12 px-3 rounded-xl border-2 border-ops-border bg-ops-bg focus:bg-ops-subtle focus:border-fanta-orange text-center num-tabular text-ops-ink font-bold"
               />
             </div>
-            
-            <div className="flex gap-2 mt-2">
-              <TornPaperButton variant="secondary" type="submit" fullWidth>
-                {editingId ? 'حفظ التعديلات' : 'إضافة اللاعب'}
-              </TornPaperButton>
-              {editingId && (
-                <TornPaperButton variant="ghost" type="button" onClick={resetForm} fullWidth>
-                  إلغاء
-                </TornPaperButton>
-              )}
-            </div>
-          </form>
-        </CardboardContainer>
+          </div>
 
-        <CardboardContainer variant="board" className="p-4 min-h-[200px] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-stamp text-xl mb-4">اللاعبون المسجلون</h2>
-          {loading ? (
-            <p className="text-center text-marker animate-pulse">جاري التحميل...</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {players.map(player => (
-                <div key={player.id} className="flex items-center justify-between p-2 bg-white/60 border-b-2 border-black/10 rounded">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 flex items-center justify-center bg-scrap-ink text-white rounded-full text-xs font-bold">
-                      {player.jerseyNumber || '?'}
-                    </span>
-                    <div className="flex flex-col text-right">
-                      <span className="font-bold text-sm text-marker leading-none">{player.nameAr}</span>
-                      <span className="text-[10px] text-scrap-outline mt-1">{getTeamName(player.team)} • {player.position}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => handleEdit(player)} className="text-blue-600 font-bold underline text-xs">تعديل</button>
-                    <button onClick={() => handleDelete(player.id)} className="text-red-600 font-bold underline text-xs">حذف</button>
-                  </div>
-                </div>
-              ))}
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              type="submit"
+              disabled={saving}
+              className="min-h-[48px] px-6 rounded-xl bg-fanta-orange hover:bg-fanta-orange-deep text-arena-bg font-display font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Plus size={18} strokeWidth={2.6} aria-hidden="true" />
+              <span>{editingId ? 'حفظ التعديلات' : 'إضافة اللاعب'}</span>
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="min-h-[48px] px-5 rounded-xl bg-ops-subtle text-ops-ink font-display font-bold text-sm cursor-pointer"
+              >
+                إلغاء
+              </button>
+            )}
+          </div>
+
+          {feedback && (
+            <div
+              role="status"
+              className={`px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
+                  : 'bg-red-50 border border-red-300 text-red-700'
+              }`}
+            >
+              <CheckCircle2 size={15} aria-hidden="true" />
+              <span>{feedback.text}</span>
             </div>
           )}
-        </CardboardContainer>
+        </form>
+      </section>
+
+      {/* Filter & Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search
+            size={18}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ops-muted pointer-events-none"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="ابحث باسم اللاعب…"
+            className="w-full h-12 pr-10 pl-4 rounded-xl border-2 border-ops-border bg-ops-surface text-ops-ink font-semibold"
+          />
+        </div>
+
+        <select
+          aria-label="تصفية حسب الفريق"
+          value={filterTeam}
+          onChange={(e) => setFilterTeam(e.target.value)}
+          className="h-12 px-4 rounded-xl border-2 border-ops-border bg-ops-surface text-ops-ink font-bold sm:w-56"
+        >
+          <option value="all">جميع الفرق ({players.length})</option>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nameAr}
+            </option>
+          ))}
+        </select>
       </div>
-    </ScrapbookPage>
+
+      {/* Players List */}
+      {loading ? (
+        <LoadingSkeleton count={4} theme="light" height="h-18" />
+      ) : filteredPlayers.length === 0 ? (
+        <EmptyState
+          theme="light"
+          icon={Users}
+          title="لا يوجد لاعبون مطابقون"
+          description="أضف لاعبي كل فريق (5 أساسيين على الأقل + البدلاء) ليتمكن الحكم من اختيار التشكيلة."
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredPlayers.map((player) => {
+            const team = getTeam(player.teamId || player.team);
+            return (
+              <div
+                key={player.id}
+                className="glass-card rounded-2xl bg-ops-surface border-2 border-ops-border p-3.5 flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-10 h-10 rounded-xl bg-ops-ink text-arena-bg font-display font-extrabold text-sm num-tabular flex items-center justify-center shrink-0">
+                    {player.jerseyNumber ?? '—'}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-display font-extrabold text-base text-ops-ink truncate">
+                      {player.nameAr}
+                    </div>
+                    <div className="text-xs font-semibold text-ops-muted truncate">
+                      {team?.nameAr || 'بدون فريق'} • {player.position || 'لاعب'} •{' '}
+                      <strong className="num-tabular text-fanta-orange">
+                        {player.goals || 0} أهداف
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(player)}
+                    aria-label={`تعديل ${player.nameAr}`}
+                    className="w-10 h-10 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-center text-ops-ink cursor-pointer"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(player)}
+                    aria-label={`حذف ${player.nameAr}`}
+                    className="w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center text-red-700 cursor-pointer"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

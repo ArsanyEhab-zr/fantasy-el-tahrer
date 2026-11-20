@@ -1,316 +1,301 @@
 @import "tailwindcss";
 
-/* ========================================
-   SCRAPBOOK FOOTBALL TOURNAMENT HUB
-   Design System: "Pitch Collage"
-   Tailwind v4 CSS-First Config
-   ======================================== */
-
 @theme {
-  /* ---- Colors ---- */
-  --color-scrap-cyan: #00ccff;
-  --color-scrap-cyan-dark: #006782;
-  --color-scrap-magenta: #fe00fe;
-  --color-scrap-magenta-dark: #a900a9;
-  --color-scrap-pink: #ff00ff;
-  --color-scrap-brown: #c19a6b;
-  --color-scrap-brown-light: #dfb584;
-  --color-scrap-brown-dark: #78582f;
-  --color-scrap-paper: #f5f5f5;
-  --color-scrap-paper-warm: #f9f9f9;
-  --color-scrap-ink: #1a1c1c;
-  --color-scrap-error: #ba1a1a;
-  --color-scrap-error-bg: #ffdad6;
-  --color-scrap-surface-dim: #dadada;
-  --color-scrap-surface-container: #eeeeee;
-  --color-scrap-outline: #6c797f;
+  /* ---- Layer 1: Brand & Arena Primitives ---- */
+  --color-fanta-orange: #E8C87F;
+  --color-fanta-orange-hot: #F4DBA4;
+  --color-fanta-orange-deep: #D2AE62;
+  --color-fanta-volt: #A4D4B6;
+  --color-fanta-volt-dim: #74B791;
+  --color-fanta-crimson: #FD7181;
+  --color-fanta-amber: #F1C96E;
+  --color-fanta-sky: #83BDE8;
+  --color-fanta-emerald: #10B981;
 
-  /* ---- Fonts ---- */
-  --font-stamp: "Anybody", sans-serif;
-  --font-marker: "Bricolage Grotesque", sans-serif;
-  --font-typewriter: "Space Mono", monospace;
+  /* ---- Layer 2: Viewer Arena Dark Semantic Tokens ---- */
+  --color-arena-bg: #091B32;
+  --color-arena-surface: #102842;
+  --color-arena-elevated: #1C3956;
+  --color-arena-border: #39536E;
+  --color-arena-ink: #F8FAFC;
+  --color-arena-muted: #B7C9DB;
 
-  /* ---- Hard Shadows ---- */
-  --shadow-hard-sm: 2px 2px 0px rgba(0, 0, 0, 1);
-  --shadow-hard-md: 4px 4px 0px rgba(0, 0, 0, 1);
-  --shadow-hard-lg: 6px 6px 0px rgba(0, 0, 0, 0.9);
-  --shadow-hard-xl: 8px 8px 0px rgba(0, 0, 0, 0.85);
+  /* ---- Layer 2: Admin Daylight Editorial Ops Tokens ---- */
+  --color-ops-bg: #0B2038;
+  --color-ops-surface: #142D48;
+  --color-ops-subtle: #203C59;
+  --color-ops-border: #415A73;
+  --color-ops-ink: #F6F3EC;
+  --color-ops-muted: #BDCBDB;
 
-  /* ---- Animations ---- */
-  --animate-tape-rustle: tape-rustle 2s ease-in-out infinite;
-  --animate-pulse-live: pulse-live 1.5s ease-in-out infinite;
-  --animate-paper-drop: paper-drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  --animate-marker-fill: marker-fill 1s ease-out forwards;
-  --animate-doodle-draw: doodle-draw 0.8s ease-in-out forwards;
-  --animate-sticker-pop: sticker-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  --animate-fade-in-up: fade-in-up 0.5s ease-out forwards;
-  --animate-wiggle: wiggle 0.3s ease-in-out;
+  /* ---- Layer 2: Referee Pitch High-Contrast Tokens ---- */
+  --color-pitch-bg: #091B32;
+  --color-pitch-surface: #132D49;
+  --color-pitch-elevated: #203C59;
+  --color-pitch-border: #415A73;
+
+  /* ---- Typography Families ---- */
+  --font-sans: "Playpen Sans Variable", "Playpen Sans Arabic Variable", sans-serif;
+  --font-display: var(--font-sans);
+  --font-geist: var(--font-sans);
+
+  /* ---- Intentional Colored & Crisp Elevation Shadows ---- */
+  --shadow-fanta-glow: 0 12px 32px -8px rgba(232, 200, 127, 0.45);
+  --shadow-volt-glow: 0 10px 28px -8px rgba(164, 212, 182, 0.35);
+  --shadow-crimson-glow: 0 12px 32px -8px rgba(255, 46, 84, 0.45);
+  --shadow-card-arena: 0 10px 28px -10px rgba(0, 0, 0, 0.65);
+  --shadow-card-ops: 0 4px 16px -4px rgba(17, 20, 28, 0.08);
+  --shadow-block-orange: 4px 4px 0px #E8C87F;
+  --shadow-block-volt: 4px 4px 0px #A4D4B6;
+  --shadow-block-dark: 4px 4px 0px #F6F3EC;
 }
 
-/* ---- Keyframes ---- */
-@keyframes tape-rustle {
-  0%, 100% { transform: rotate(var(--tape-angle, -12deg)); }
-  50% { transform: rotate(calc(var(--tape-angle, -12deg) + 3deg)); }
+:root {
+  color-scheme: dark;
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes pulse-live {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.6); opacity: 0.4; }
-}
+/* ==========================================================================
+   BASE RESET & TYPOGRAPHIC EXCELLENCE
+   ========================================================================== */
 
-@keyframes paper-drop {
-  0% { transform: translateY(-40px) rotate(-8deg); opacity: 0; }
-  60% { transform: translateY(6px) rotate(2deg); opacity: 1; }
-  100% { transform: translateY(0) rotate(var(--card-angle, 0deg)); opacity: 1; }
-}
-
-@keyframes marker-fill {
-  0% { width: 0%; }
-  100% { width: var(--fill-width, 50%); }
-}
-
-@keyframes doodle-draw {
-  0% { stroke-dashoffset: var(--path-length, 100); }
-  100% { stroke-dashoffset: 0; }
-}
-
-@keyframes sticker-pop {
-  0% { transform: scale(0) rotate(-20deg); }
-  70% { transform: scale(1.15) rotate(5deg); }
-  100% { transform: scale(1) rotate(var(--sticker-angle, 0deg)); }
-}
-
-@keyframes fade-in-up {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-3deg); }
-  75% { transform: rotate(3deg); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-
-/* ========================================
-   BASE STYLES
-   ======================================== */
-
-* {
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
-  font-family: var(--font-marker);
-  color: var(--color-scrap-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
   width: 100%;
+  background-color: var(--color-arena-bg);
+  color: var(--color-arena-ink);
 }
 
 body {
+  margin: 0;
   min-height: 100dvh;
-  overflow-x: hidden;
   width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-y: contain;
 }
 
-/* ========================================
-   TEXTURE BACKGROUNDS (CSS-only)
-   ======================================== */
-
-.bg-recycled-paper {
-  background-color: var(--color-scrap-paper);
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.015) 2px,
-      rgba(0, 0, 0, 0.015) 4px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 3px,
-      rgba(0, 0, 0, 0.01) 3px,
-      rgba(0, 0, 0, 0.01) 5px
-    );
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  hyphens: none;
 }
 
-.bg-cardboard {
-  background-color: var(--color-scrap-brown);
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      rgba(0, 0, 0, 0.07) 3px,
-      rgba(0, 0, 0, 0.07) 4px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 8px,
-      rgba(0, 0, 0, 0.03) 8px,
-      rgba(0, 0, 0, 0.03) 9px
-    );
+/* Tabular lining numbers for scores, clocks, standings, rankings */
+.num-tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-.bg-cardboard-light {
-  background-color: var(--color-scrap-brown-light);
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 4px,
-      rgba(0, 0, 0, 0.04) 4px,
-      rgba(0, 0, 0, 0.04) 5px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 10px,
-      rgba(0, 0, 0, 0.02) 10px,
-      rgba(0, 0, 0, 0.02) 11px
-    );
+/* Accessible focus rings (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid var(--color-fanta-orange);
+  outline-offset: 2px;
 }
 
-.bg-crumpled-paper {
-  background-color: #f0ebe3;
-  background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(0, 0, 0, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse at 40% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 40%),
-    repeating-linear-gradient(
-      135deg,
-      transparent,
-      transparent 6px,
-      rgba(0, 0, 0, 0.01) 6px,
-      rgba(0, 0, 0, 0.01) 7px
-    );
+/* Prevent iOS auto-zoom on inputs */
+input, select, textarea {
+  font-size: 16px;
 }
 
-/* ========================================
-   SCRAPBOOK UTILITY CLASSES
-   ======================================== */
+/* ==========================================================================
+   STADIUM BACKGROUNDS AND GLASS CARDS
+   ========================================================================== */
 
-.shadow-hard-sm { box-shadow: var(--shadow-hard-sm); }
-.shadow-hard-md { box-shadow: var(--shadow-hard-md); }
-.shadow-hard-lg { box-shadow: var(--shadow-hard-lg); }
-.shadow-hard-xl { box-shadow: var(--shadow-hard-xl); }
-
-/* Press effect on interactive elements */
-.press-effect {
-  transition: transform 100ms ease, box-shadow 100ms ease;
-}
-.press-effect:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0) !important;
-}
-
-/* Card hover lift */
-.card-hover {
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-hard-lg);
-}
-
-/* Stagger animation delays */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
-.stagger-7 { animation-delay: 0.35s; }
-.stagger-8 { animation-delay: 0.4s; }
-
-/* Pre-animation state */
-.pre-animate {
-  opacity: 0;
-}
-
-/* Ink / marker text effect */
-.text-stamp {
-  font-family: var(--font-stamp);
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.text-marker {
-  font-family: var(--font-marker);
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.text-typewriter {
-  font-family: var(--font-typewriter);
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 1.2;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-/* Torn edge masks */
-.torn-top {
-  clip-path: polygon(
-    0% 4%, 5% 1%, 10% 3%, 15% 0%, 20% 2%, 25% 1%, 30% 4%, 35% 0%, 
-    40% 3%, 45% 1%, 50% 2%, 55% 0%, 60% 3%, 65% 1%, 70% 4%, 75% 0%, 
-    80% 2%, 85% 1%, 90% 3%, 95% 0%, 100% 2%,
-    100% 100%, 0% 100%
-  );
-}
-
-.torn-bottom {
-  clip-path: polygon(
-    0% 0%, 100% 0%,
-    100% 96%, 95% 99%, 90% 97%, 85% 100%, 80% 98%, 75% 99%, 70% 96%,
-    65% 100%, 60% 97%, 55% 99%, 50% 98%, 45% 100%, 40% 97%, 35% 100%,
-    30% 96%, 25% 99%, 20% 98%, 15% 100%, 10% 97%, 5% 99%, 0% 96%
-  );
-}
-
-.torn-both {
-  clip-path: polygon(
-    0% 4%, 4% 1%, 8% 3%, 12% 0%, 17% 2%, 22% 1%, 27% 4%, 32% 0%,
-    37% 3%, 42% 1%, 47% 2%, 52% 0%, 57% 3%, 62% 1%, 67% 4%, 72% 0%,
-    77% 2%, 82% 1%, 87% 3%, 92% 0%, 97% 2%, 100% 4%,
-    100% 96%, 97% 99%, 92% 97%, 87% 100%, 82% 98%, 77% 99%, 72% 96%,
-    67% 100%, 62% 97%, 57% 99%, 52% 98%, 47% 100%, 42% 97%, 37% 100%,
-    32% 96%, 27% 99%, 22% 98%, 17% 100%, 12% 97%, 8% 99%, 4% 96%, 0% 98%
-  );
-}
-
-/* Tape texture overlay */
-.tape-texture {
+.bg-arena-stadium, .bg-ops-canvas {
   position: relative;
+  isolation: isolate;
+  background-color: var(--color-arena-bg);
 }
-.tape-texture::after {
-  content: '';
+.bg-arena-stadium::before, .bg-ops-canvas::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(#081a30bf, #081a30d9), url('/brand/stadium.webp') center / cover;
+}
+.bg-scoreboard-turf {
+  background-color: #102842;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.022) 0px,
+      rgba(255, 255, 255, 0.022) 28px,
+      transparent 28px,
+      transparent 56px
+    ),
+    radial-gradient(ellipse 80% 70% at 50% -15%, rgba(232, 200, 127, 0.24), transparent 70%);
+}
+
+
+.glass-card {
+  --glass-base: 12 33 55;
+  background-color: rgb(var(--glass-base) / .94);
+  background-image: linear-gradient(145deg, rgb(225 239 255 / .13), transparent 54%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .19), 0 8px 28px -14px rgb(1 9 22 / .65);
+}
+.glass-alert-red { --glass-base: 255 230 232; }
+.glass-alert-amber { --glass-base: 255 239 200; }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-card {
+    background-color: rgb(var(--glass-base) / .67);
+    -webkit-backdrop-filter: blur(14px) saturate(125%);
+    backdrop-filter: blur(14px) saturate(125%);
+  }
+  :is(.glass-alert-red, .glass-alert-amber) { background-color: rgb(var(--glass-base) / .91); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-card {
+    background-color: rgb(var(--glass-base));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ==========================================================================
+   KEYFRAMES & MOTION UTILITIES
+   ========================================================================== */
+
+@keyframes live-beacon {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee-rtl {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(50%); }
+}
+
+.animate-live-beacon {
+  animation: live-beacon 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Safe area helpers for mobile notches & bottom home bar */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Hide scrollbars cleanly where horizontal scrolling is intentional (Bracket, Tabs) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Respect reduced motion preference globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.shot-track-animated { min-height: 245svh; }
+.shot-track-animated .matchday { position: sticky; top: 0; }
+.shot-progress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--color-fanta-orange);
+  transform: scaleX(var(--shot-progress, 0));
+  transform-origin: right;
+}
+.matchday { background: #091b32; }
+.matchday-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(1rem, 3svh, 2rem);
+  min-height: 100svh;
+  padding-block: calc(max(1.25rem, env(safe-area-inset-top)) + 4.5rem)
+    max(1.75rem, env(safe-area-inset-bottom));
+}
+.matchday-copy {
+  position: relative;
+  z-index: 1;
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+}
+.matchday-media {
   position: absolute;
   inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 1px,
-      rgba(255,255,255,0.1) 1px,
-      rgba(255,255,255,0.1) 2px
-    );
-  pointer-events: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
-
-/* Scrollbar hiding */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.matchday-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #061223ab, #06122328 37%, transparent 59%, #050e19d9);
+}
+.hero-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  min-height: 44px;
+  padding: .65rem 1.35rem;
+  border-radius: .65rem;
+  background: var(--color-fanta-orange);
+  color: var(--color-arena-bg);
+  font-size: .925rem;
+  font-weight: 700;
+  transition: transform .2s;
+}
+.hero-action:hover { transform: scale(1.04); }
+@media (min-width: 48rem) and (orientation: landscape) {
+  .matchday-content {
+    max-width: 96rem;
+    margin-inline: auto;
+    padding-block: calc(max(1.25rem, env(safe-area-inset-top)) + clamp(6rem, 14vh, 10rem))
+      max(2rem, 7vh, env(safe-area-inset-bottom));
+  }
+  .matchday-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #081a30d9, #081a3077 56%, #081a3033), linear-gradient(#081a3080, transparent 30%);
+  }
+  .matchday-copy { width: 55%; margin-inline-start: auto; }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-enter { animation: fadeSlideUp .8s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter { animation: none; }
+}
