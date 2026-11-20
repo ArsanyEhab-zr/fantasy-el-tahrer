@@ -1,3 +1,4 @@
+import InstallAppButton from '../components/ui/InstallAppButton';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Menu, Radio, X } from 'lucide-react';
@@ -50,10 +51,11 @@ export default function ViewerLayout() {
   return (
     <div dir="rtl" className="min-h-dvh bg-arena-stadium font-geist text-arena-ink">
       <header className={home ? 'absolute inset-x-0 top-0 z-30' : 'sticky top-0 z-30 border-b border-arena-border bg-arena-bg/95'}>
-        <div className="relative z-30 mx-auto flex max-w-screen-2xl items-center justify-between gap-6 px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] md:px-12 lg:px-16">
+        <div className="relative z-30 mx-auto flex max-w-screen-2xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] md:px-12 lg:px-16">
           <Link to="/" onClick={() => setOpen(false)} aria-label="فانتزي التحرير — الرئيسية"><FantaLogo size="sm" /></Link>
           <nav aria-label="التنقل الرئيسي" className="hidden gap-6 text-sm font-semibold md:flex">{menuLinks}</nav>
-          <div className="hidden md:block">{action}</div>
+          <InstallAppButton />
+          <div className="hidden lg:block">{action}</div>
           <button ref={toggle} className="relative grid size-10 place-items-center rounded-lg text-white transition-transform active:scale-90 md:hidden"
             aria-expanded={open} aria-controls="viewer-menu" aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'} onClick={() => setOpen(!open)}>
             <Menu className={`absolute transition-all duration-300 ${open ? 'rotate-90 scale-50 opacity-0' : ''}`} />

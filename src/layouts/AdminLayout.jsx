@@ -1,5 +1,6 @@
+import InstallAppButton from '../components/ui/InstallAppButton';
 import { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Shield,
@@ -11,21 +12,19 @@ import {
   Menu,
   X,
   LogOut,
-  ExternalLink,
-  Flag,
 } from 'lucide-react';
 import { clearPinSession } from '../utils/pinSession';
 import PinGuard from '../components/ui/PinGuard';
 import FantaLogo from '../components/ui/FantaLogo';
 
 const ADMIN_NAV = [
-  { to: '/admin', label: 'لوحة العمليات', icon: LayoutDashboard, end: true },
-  { to: '/admin/teams', label: 'الفرق', icon: Shield },
-  { to: '/admin/players', label: 'قوائم اللاعبين', icon: Users },
-  { to: '/admin/groups', label: 'المجموعات', icon: Layers },
-  { to: '/admin/matches', label: 'جدول المباريات', icon: CalendarClock },
-  { to: '/admin/bracket', label: 'دور الإقصائيات', icon: GitBranch },
-  { to: '/admin/discipline', label: 'الانضباط والخصومات', icon: Scale },
+  { to: '/', label: 'لوحة العمليات', icon: LayoutDashboard, end: true },
+  { to: '/teams', label: 'الفرق', icon: Shield },
+  { to: '/players', label: 'قوائم اللاعبين', icon: Users },
+  { to: '/groups', label: 'المجموعات', icon: Layers },
+  { to: '/matches', label: 'جدول المباريات', icon: CalendarClock },
+  { to: '/bracket', label: 'دور الإقصائيات', icon: GitBranch },
+  { to: '/discipline', label: 'الانضباط والخصومات', icon: Scale },
 ];
 
 /**
@@ -37,10 +36,13 @@ const ADMIN_NAV = [
 export default function AdminLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
+  const [lockCount, setLockCount] = useState(0);
 
   const handleLock = () => {
     clearPinSession('admin');
-    navigate('/');
+    setDrawerOpen(false);
+    setLockCount(count => count + 1);
+    navigate('/', { replace: true });
   };
 
   const renderNavLinks = (onSelect) => (
@@ -70,35 +72,19 @@ export default function AdminLayout() {
   );
 
   return (
-    <PinGuard role="admin">
+    <PinGuard key={lockCount} expectedPin={import.meta.env.VITE_ADMIN_PIN || '2026'} role="admin">
       <div dir="rtl" className="min-h-dvh w-full bg-ops-canvas text-ops-ink flex">
         {/* Desktop Sidebar (lg+) */}
         <aside className="hidden lg:flex lg:flex-col w-68 shrink-0 bg-ops-surface border-l-2 border-ops-border sticky top-0 h-dvh p-5 justify-between">
           <div>
-            <div className="pb-5 mb-5 border-b border-ops-border">
+            <div className="pb-5 mb-5 space-y-3 border-b border-ops-border">
               <FantaLogo variant="light" size="sm" subtitle="بوابة إدارة الدوري" />
+              <InstallAppButton />
             </div>
             {renderNavLinks()}
           </div>
 
           <div className="pt-4 border-t border-ops-border space-y-2">
-            <Link
-              to="/referee"
-              className="w-full min-h-[44px] px-3.5 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-between text-xs font-bold text-ops-ink transition-colors"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Flag size={15} className="text-fanta-orange" aria-hidden="true" />
-                <span>تطبيق الحكم</span>
-              </span>
-              <ExternalLink size={14} className="text-ops-muted" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/"
-              className="w-full min-h-[44px] px-3.5 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-between text-xs font-bold text-ops-ink transition-colors"
-            >
-              <span>معاينة تطبيق الجمهور</span>
-              <ExternalLink size={14} className="text-ops-muted" aria-hidden="true" />
-            </Link>
             <button
               type="button"
               onClick={handleLock}
@@ -114,7 +100,7 @@ export default function AdminLayout() {
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Mobile / Tablet Top Bar */}
           <header className="lg:hidden sticky top-0 z-40 bg-ops-surface border-b-2 border-ops-border pt-safe">
-            <div className="px-4 h-16 flex items-center justify-between gap-3">
+            <div className="px-4 min-h-16 flex flex-wrap items-center justify-between gap-2 py-1">
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
@@ -127,6 +113,7 @@ export default function AdminLayout() {
                 <FantaLogo variant="light" size="sm" subtitle="الإدارة" />
               </div>
 
+              <InstallAppButton />
               <button
                 type="button"
                 onClick={handleLock}
@@ -160,25 +147,6 @@ export default function AdminLayout() {
                     </button>
                   </div>
                   {renderNavLinks(() => setDrawerOpen(false))}
-                </div>
-
-                <div className="pt-4 border-t border-ops-border space-y-2">
-                  <Link
-                    to="/referee"
-                    onClick={() => setDrawerOpen(false)}
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-ops-bg border border-ops-border flex items-center justify-between text-xs font-bold text-ops-ink"
-                  >
-                    <span>تطبيق الحكم</span>
-                    <Flag size={14} className="text-fanta-orange" />
-                  </Link>
-                  <Link
-                    to="/"
-                    onClick={() => setDrawerOpen(false)}
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-ops-bg border border-ops-border flex items-center justify-between text-xs font-bold text-ops-ink"
-                  >
-                    <span>تطبيق الجمهور</span>
-                    <ExternalLink size={14} className="text-ops-muted" />
-                  </Link>
                 </div>
               </div>
             </div>

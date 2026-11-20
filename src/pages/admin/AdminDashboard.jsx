@@ -13,7 +13,6 @@ import {
   Loader2,
   Sliders,
   CheckCircle2,
-  Flag,
 } from 'lucide-react';
 import { db } from '../../utils/firebase';
 import { saveTournamentSettings } from '../../utils/tournamentSchema';
@@ -88,10 +87,10 @@ export default function AdminDashboard() {
   };
 
   const kpis = [
-    { label: 'الفرق المسجلة', value: teams.length, icon: Shield, to: '/admin/teams' },
-    { label: 'اللاعبون', value: players.length, icon: Users, to: '/admin/players' },
-    { label: 'المباريات', value: matches.length, icon: CalendarClock, to: '/admin/matches' },
-    { label: 'قرارات الخصم', value: penalties.length, icon: Scale, to: '/admin/discipline' },
+    { label: 'الفرق المسجلة', value: teams.length, icon: Shield, to: '/teams' },
+    { label: 'اللاعبون', value: players.length, icon: Users, to: '/players' },
+    { label: 'المباريات', value: matches.length, icon: CalendarClock, to: '/matches' },
+    { label: 'قرارات الخصم', value: penalties.length, icon: Scale, to: '/discipline' },
   ];
 
   const shortcuts = [
@@ -99,25 +98,19 @@ export default function AdminDashboard() {
       title: 'الفرق والمجموعات',
       desc: 'إضافة الفرق، تعديل الشعارات، وتوزيع المجموعات.',
       icon: Layers,
-      to: '/admin/groups',
+      to: '/groups',
     },
     {
       title: 'جدولة المباريات',
       desc: 'تحديد التاريخ وساعة الانطلاق الدقيقة والملعب لكل مباراة.',
       icon: CalendarClock,
-      to: '/admin/matches',
+      to: '/matches',
     },
     {
       title: 'الانضباط وخصم النقاط',
       desc: 'مراجعة قرارات الشغب والانسحاب وتجاوز إحصائيات اللاعبين.',
       icon: Scale,
-      to: '/admin/discipline',
-    },
-    {
-      title: 'تطبيق الحكم المباشر',
-      desc: 'الانتقال إلى وحدة التحكم الميدانية لبدء وإدارة المباريات.',
-      icon: Flag,
-      to: '/referee',
+      to: '/discipline',
     },
   ];
 
@@ -166,16 +159,16 @@ export default function AdminDashboard() {
                 توجد مباراة مباشرة قيد اللعب الآن
               </div>
               <div className="text-xs font-semibold text-red-700">
-                يمكنك متابعتها أو تعديلها طارئاً من سجل المباريات أو تطبيق الحكم.
+                يمكنك متابعتها أو تعديلها طارئاً من سجل المباريات.
               </div>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => navigate('/referee')}
+            onClick={() => navigate('/matches')}
             className="min-h-[42px] px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-bold text-xs cursor-pointer"
           >
-            فتح شاشة الحكم
+            فتح سجل المباريات
           </button>
         </div>
       )}

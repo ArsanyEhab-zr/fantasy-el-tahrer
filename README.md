@@ -1,17 +1,15 @@
-# React + Vite
+# Fanta PWAs
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Use three Vercel projects pointing to the same repository and root directory. Each project uses the Vite preset, `npm run build`, and the `dist` output directory. Give each project its own origin because all three service workers control `/`.
 
-Currently, two official plugins are available:
+| Project | Vercel environment variable | Local development | Local production build |
+| --- | --- | --- | --- |
+| Fanta | `VITE_APP_TARGET=viewer` | `npm run dev:viewer` | `npm run build:viewer` |
+| Fanta Admin | `VITE_APP_TARGET=admin` | `npm run dev:admin` | `npm run build:admin` |
+| Fanta Ref | `VITE_APP_TARGET=referee` | `npm run dev:referee` | `npm run build:referee` |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Set the target for both Preview and Production. An unset target builds the viewer. Each build replaces the local `dist` directory. The existing Vercel rewrite serves the selected app on direct links and refreshes.
 
-## React Compiler
+Configure the same league Firebase web settings on all three projects. For a custom staff PIN, set `VITE_ADMIN_PIN` on the admin project or `VITE_REFEREE_PIN` on the referee project. PINs control the client interface. Firestore authorization requires backend rules.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
-# fantasy-el-tahrer
+To check installation locally, run the desired production build and `npm run preview`. Native installation requires a supported browser on HTTPS or localhost.

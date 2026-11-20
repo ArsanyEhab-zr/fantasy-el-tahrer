@@ -1,19 +1,15 @@
 import { STORAGE_KEYS, isPinUnlocked } from '../../utils/pinSession';
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Lock, ShieldCheck, ArrowRight, Delete, KeyRound } from 'lucide-react';
+import InstallAppButton from './InstallAppButton';
+import { Lock, ShieldCheck, Delete, KeyRound } from 'lucide-react';
 import FantaLogo from './FantaLogo';
 
-const DEFAULT_PINS = {
-  admin: import.meta.env.VITE_ADMIN_PIN || '2026',
-  referee: import.meta.env.VITE_REFEREE_PIN || '1111',
-};
 
 /**
  * PinGuard — Protects Admin (/admin/*) and Referee (/referee/*) portals from accidental fan entry.
  * Accessible: supports direct keyboard typing, paste, password managers, AND thumb-friendly keypad.
  */
-export default function PinGuard({ role = 'admin', children }) {
+export default function PinGuard({ role, expectedPin, children }) {
   const [unlocked, setUnlocked] = useState(() => isPinUnlocked(role));
   const [pin, setPin] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -22,7 +18,6 @@ export default function PinGuard({ role = 'admin', children }) {
   if (unlocked) return children;
 
   const isAdmin = role === 'admin';
-  const expectedPin = DEFAULT_PINS[role];
 
   const verifyPin = (candidate) => {
     if (candidate.trim() === String(expectedPin)) {
@@ -95,6 +90,7 @@ export default function PinGuard({ role = 'admin', children }) {
           </div>
         </div>
 
+        <div className="mb-4"><InstallAppButton /></div>
         <h1 className="font-display font-extrabold text-2xl mb-1.5">
           {isAdmin ? 'دخول الإدارة' : 'دخول طاقم التحكيم'}
         </h1>
@@ -218,20 +214,7 @@ export default function PinGuard({ role = 'admin', children }) {
           </button>
         </form>
 
-        <div
-          className={`mt-5 pt-4 border-t flex items-center justify-between text-xs ${
-            isAdmin ? 'border-ops-border text-ops-muted' : 'border-pitch-border text-arena-muted'
-          }`}
-        >
-          <span>العودة لصفحة الجماهير</span>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1 font-bold text-fanta-orange hover:underline min-h-[44px] px-1"
-          >
-            <span>الرئيسية</span>
-            <ArrowRight size={14} className="rotate-180" />
-          </Link>
-        </div>
+
       </div>
     </div>
   );

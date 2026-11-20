@@ -224,7 +224,7 @@ export default function ManageTeams() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => navigate(`/admin/players?team=${team.id}`)}
+                      onClick={() => navigate(`/players?team=${team.id}`)}
                       aria-label={`قائمة لاعبي ${team.nameAr}`}
                       title="قائمة اللاعبين"
                       className="w-10 h-10 rounded-xl bg-ops-bg hover:bg-ops-subtle border border-ops-border flex items-center justify-center text-ops-ink cursor-pointer"

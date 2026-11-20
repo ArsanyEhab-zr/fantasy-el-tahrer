@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import InstallAppButton from '../components/ui/InstallAppButton';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Flag } from 'lucide-react';
 import { clearPinSession } from '../utils/pinSession';
@@ -12,18 +14,20 @@ import FantaLogo from '../components/ui/FantaLogo';
  */
 export default function RefereeLayout() {
   const navigate = useNavigate();
+  const [lockCount, setLockCount] = useState(0);
 
   const handleLock = () => {
     clearPinSession('referee');
-    navigate('/');
+    setLockCount(count => count + 1);
+    navigate('/', { replace: true });
   };
 
   return (
-    <PinGuard role="referee">
+    <PinGuard key={lockCount} expectedPin={import.meta.env.VITE_REFEREE_PIN || '1111'} role="referee">
       <div dir="rtl" className="min-h-dvh w-full bg-arena-stadium text-arena-ink flex flex-col">
         {/* Minimal High-Contrast Top Bar */}
         <header className="sticky top-0 z-40 w-full bg-pitch-surface border-b-2 border-pitch-border pt-safe">
-          <div className="max-w-md mx-auto px-4 h-15 flex items-center justify-between gap-3">
+          <div className="max-w-md mx-auto px-4 min-h-15 flex flex-wrap items-center justify-between gap-2 py-1">
             <div className="flex items-center gap-2.5">
               <FantaLogo variant="dark" size="sm" />
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fanta-volt text-arena-bg font-display font-extrabold text-xs">
@@ -32,6 +36,7 @@ export default function RefereeLayout() {
               </span>
             </div>
 
+            <InstallAppButton />
             <button
               type="button"
               onClick={handleLock}
