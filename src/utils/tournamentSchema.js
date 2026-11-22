@@ -440,7 +440,7 @@ export const applyDisciplinaryPenalty = async ({
 };
 
 export async function undoLastEvent(matchId, expectedId) {
-  await editLiveMatch(matchId, (tx, ref, match, rawEvents) => {
+  const result = await editLiveMatch(matchId, (tx, ref, match, rawEvents) => {
     const event = match.events.at(-1);
     if (!expectedId || event?.id !== expectedId) throw new Error('تغيّر آخر حدث. راجع سجل المباراة.');
     const events = [...rawEvents];
@@ -481,8 +481,14 @@ export async function undoLastEvent(matchId, expectedId) {
         throw new Error('لا يمكن التراجع عن هذا الحدث.');
     }
     tx.update(ref, updates);
+    return {
+      undoneEvent: event,
+      homeScore: updates.homeScore ?? match.homeScore,
+      awayScore: updates.awayScore ?? match.awayScore,
+    };
   });
   await publishSnapshotSections(['matches', 'penalties']);
+  return result;
 }
 
 /**

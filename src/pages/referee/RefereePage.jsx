@@ -1,4 +1,12 @@
-import { broadcastMatchNotification, notifyPenalty } from '../../utils/notifications';
+import {
+  notifyForfeit,
+  notifyFulltime,
+  notifyKickoff,
+  notifyPenalty,
+  notifyPlayerEvent,
+  notifySubstitution,
+  notifyUndoEvent,
+} from '../../utils/notifications';
 import { useMatchdays } from '../../hooks/useMatchdays';
 import MatchdaySelector from '../../components/match/MatchdaySelector';
 import { useState, useMemo } from 'react';
@@ -159,8 +167,11 @@ export default function RefereePage() {
         homeScore: setupMatch.homeScore ?? 0,
         awayScore: setupMatch.awayScore ?? 0,
       });
-      void broadcastMatchNotification({ type:'kickoff', matchId:setupMatch.id, title:'🏁 انطلاق المباراة!',
-        body:`${getTeam(setupMatch.homeTeamId)?.nameAr} 🆚 ${getTeam(setupMatch.awayTeamId)?.nameAr} — تابع البث المباشر الآن!` });
+      notifyKickoff({
+        matchId: setupMatch.id,
+        homeName: getTeam(setupMatch.homeTeamId)?.nameAr || 'الفريق المستضيف',
+        awayName: getTeam(setupMatch.awayTeamId)?.nameAr || 'الفريق الضيف',
+      });
       setSelectedMatchId(setupMatch.id);
       setSetupMatchId(null);
       showToast('انطلقت المباراة! الساعة متزامنة مباشرة الآن.');
@@ -203,16 +214,21 @@ export default function RefereePage() {
         actionType,
         clockSnapshot: snapshot,
       });
-      const team = getTeam(player.teamId || player.team)?.nameAr || 'الفريق';
-      if (actionType === 'yellow' && finalType === 'red') {
-        void broadcastMatchNotification({ type:'yellow', matchId:activeMatch.id, title:`🟨 بطاقة صفراء (${snapshot.displayMinute})`,
-          body:`إنذار ثانٍ لـ ${player.nameAr} (${team})` });
-      }
-      const title = {goal:'⚽ جوووول!', yellow:'🟨 بطاقة صفراء', red:'🟥 طرد! بطاقة حمراء'}[finalType];
-      const body = finalType === 'goal'
-        ? `${player.nameAr} يسجل لـ ${team} • النتيجة: ${getTeam(activeMatch.homeTeamId)?.nameAr} ${homeScore} - ${awayScore} ${getTeam(activeMatch.awayTeamId)?.nameAr}`
-        : `${finalType === 'red' ? 'طرد' : 'إنذار لـ'} ${player.nameAr} (${team})`;
-      void broadcastMatchNotification({ type: finalType, matchId:activeMatch.id, title:`${title} (${snapshot.displayMinute})`, body });
+      const teamName = getTeam(player.teamId || player.team)?.nameAr || 'الفريق';
+      const homeName = getTeam(activeMatch.homeTeamId)?.nameAr || 'المستضيف';
+      const awayName = getTeam(activeMatch.awayTeamId)?.nameAr || 'الضيف';
+      notifyPlayerEvent({
+        matchId: activeMatch.id,
+        playerName: player.nameAr,
+        teamName,
+        homeName,
+        awayName,
+        actionType,
+        finalType,
+        homeScore,
+        awayScore,
+        displayMinute: snapshot.displayMinute,
+      });
       setActionModal({ type: null, subOffPlayerId: null });
       showToast(
         finalType === 'goal'
@@ -247,8 +263,13 @@ export default function RefereePage() {
         onPlayer,
         clockSnapshot: snapshot,
       });
-      void broadcastMatchNotification({ type:'sub', matchId:activeMatch.id, title:`🔄 تبديل (${snapshot.displayMinute})`,
-        body:`${getTeam(onPlayer.teamId)?.nameAr}: دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}` });
+      notifySubstitution({
+        matchId: activeMatch.id,
+        teamName: getTeam(onPlayer.teamId || onPlayer.team)?.nameAr || 'الفريق',
+        playerInName: onPlayer.nameAr,
+        playerOutName: offPlayer.nameAr,
+        displayMinute: snapshot.displayMinute,
+      });
       setActionModal({ type: null, subOffPlayerId: null });
       showToast(`تبديل (${snapshot.displayMinute}): دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}`);
     } catch (err) {
@@ -301,9 +322,15 @@ export default function RefereePage() {
         pointsDeducted: forfeitDeduction,
         clockSnapshot: snapshot,
       });
-      void broadcastMatchNotification({ type:'forfeit', matchId:activeMatch.id, title:'🚨 انسحاب فريق!',
-        body:`انسحاب ${withdrawingTeam?.nameAr} واعتماد النتيجة ${homeScore} - ${awayScore}` });
-      if (forfeitDeduction > 0) notifyPenalty(withdrawingTeam?.nameAr, forfeitDeduction, 'انسحاب', activeMatch.id);
+      notifyForfeit({
+        matchId: activeMatch.id,
+        withdrawingTeamName: withdrawingTeam?.nameAr || 'الفريق',
+        homeName: getTeam(activeMatch.homeTeamId)?.nameAr || 'المستضيف',
+        awayName: getTeam(activeMatch.awayTeamId)?.nameAr || 'الضيف',
+        homeScore,
+        awayScore,
+      });
+      if (forfeitDeduction > 0) notifyPenalty(withdrawingTeam?.nameAr || 'الفريق', forfeitDeduction, 'انسحاب', activeMatch.id);
       setActionModal({ type: null, subOffPlayerId: null });
       setSelectedMatchId(null);
       showToast('تم تسجيل الانسحاب وإنهاء المباراة رسمياً.');
@@ -326,8 +353,14 @@ export default function RefereePage() {
         match: activeMatch,
         clockSnapshot: snapshot,
       });
-      void broadcastMatchNotification({ type:'fulltime', matchId:activeMatch.id, title:'🏁 صافرة النهاية!',
-        body:`انتهت المباراة: ${getTeam(activeMatch.homeTeamId)?.nameAr} ${homeScore} - ${awayScore} ${getTeam(activeMatch.awayTeamId)?.nameAr}` });
+      notifyFulltime({
+        matchId: activeMatch.id,
+        homeName: getTeam(activeMatch.homeTeamId)?.nameAr || 'المستضيف',
+        awayName: getTeam(activeMatch.awayTeamId)?.nameAr || 'الضيف',
+        homeScore,
+        awayScore,
+        winnerName: actionModal.winnerId ? getTeam(actionModal.winnerId)?.nameAr || '' : '',
+      });
       setActionModal({ type: null, subOffPlayerId: null });
       setSelectedMatchId(null);
       showToast('تم إطلاق صافرة النهاية وحفظ النتيجة.');
@@ -343,7 +376,15 @@ export default function RefereePage() {
     if (!last || busy || !window.confirm(`تراجع عن آخر حدث؟ ${last.detail || ''} ${last.playerName || ''} (${last.displayMinute})`)) return;
     setBusy(true);
     try {
-      await undoLastEvent(activeMatch.id, last.id);
+      const undoResult = await undoLastEvent(activeMatch.id, last.id);
+      notifyUndoEvent({
+        matchId: activeMatch.id,
+        undoneEvent: undoResult?.undoneEvent || last,
+        homeName: getTeam(activeMatch.homeTeamId)?.nameAr || 'المستضيف',
+        awayName: getTeam(activeMatch.awayTeamId)?.nameAr || 'الضيف',
+        homeScore: undoResult?.homeScore ?? activeMatch.homeScore ?? 0,
+        awayScore: undoResult?.awayScore ?? activeMatch.awayScore ?? 0,
+      });
       showToast('تم التراجع عن الحدث وتحديث المباراة.');
     } catch (err) {
       showToast(err.message, 'error');

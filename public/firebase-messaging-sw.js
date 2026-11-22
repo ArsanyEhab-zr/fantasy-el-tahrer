@@ -4,7 +4,13 @@ self.addEventListener('notificationclick', event => {
   if (!data?.type) return;
   event.stopImmediatePropagation();
   event.notification.close();
-  const path = data.matchId ? '/live?matchId=' + encodeURIComponent(data.matchId) : data.url === '/standings' ? '/standings' : '/live';
+  const path = data.matchId
+    ? '/live?matchId=' + encodeURIComponent(data.matchId)
+    : data.url === '/standings'
+      ? '/standings'
+      : data.url === '/'
+        ? '/'
+        : '/live';
   const url = new URL(path, self.location.origin).href;
   event.waitUntil((async () => {
     for (const client of await self.clients.matchAll({type:'window',includeUncontrolled:true})) {

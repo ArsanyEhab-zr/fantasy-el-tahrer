@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import {
@@ -13,10 +13,14 @@ import {
   Loader2,
   Sliders,
   CheckCircle2,
+  BellRing,
+  Send,
 } from 'lucide-react';
 import { db } from '../../utils/firebase';
 import { saveTournamentSettings } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
+import { triggerTomorrowReminder } from '../../utils/notifications';
+import { buildTomorrowReminderPayload, formatCairoLongDate } from '../../utils/tomorrowMatches';
 
 /**
  * AdminDashboard — League Operations Control Center (/admin).
@@ -40,6 +44,13 @@ export default function AdminDashboard() {
   const halfDuration = draftHalf ?? settings?.halfDurationMinutes ?? 10;
   const [savingSettings, setSavingSettings] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState(null);
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderFeedback, setReminderFeedback] = useState(null);
+
+  const tomorrowReminder = useMemo(
+    () => buildTomorrowReminderPayload({ matches, teams }),
+    [matches, teams]
+  );
 
   useEffect(() => {
     async function checkFirebaseConnection() {
@@ -84,6 +95,48 @@ export default function AdminDashboard() {
     const nextValue = !enableKnockout;
 
     persistTournamentConfig(nextValue, halfDuration);
+  };
+
+  const handleSendTomorrowReminder = async () => {
+    if (sendingReminder || tomorrowReminder.count === 0) return;
+    setSendingReminder(true);
+    setReminderFeedback(null);
+    try {
+      const preview = await triggerTomorrowReminder({ preview: true });
+      if (!preview.count) {
+        setReminderFeedback({
+          type: 'error',
+          text: 'لا توجد مباريات مجدولة ليوم غد بتوقيت القاهرة.',
+        });
+        return;
+      }
+      const confirmMsg = preview.alreadySent
+        ? `تم إرسال تنبيه مباريات الغد (${preview.count} مباراة) مسبقاً اليوم. هل تريد إعادة إرسال التنبيه للجمهور الآن؟`
+        : `سيتم إرسال إشعار "مواعيد ماتشات بكرة" (${preview.count} مباراة) إلى جميع المشتركين. متابعة؟`;
+      if (!window.confirm(confirmMsg)) return;
+
+      const result = await triggerTomorrowReminder({ force: Boolean(preview.alreadySent) });
+      if (result.sent) {
+        setReminderFeedback({
+          type: 'success',
+          text: `تم إرسال تنبيه ماتشات الغد (${result.count} مباراة) لجميع المشتركين بنجاح.`,
+        });
+      } else {
+        setReminderFeedback({
+          type: 'error',
+          text: result.reason === 'no_matches'
+            ? 'لا توجد مباريات مجدولة ليوم غد.'
+            : 'لم يتم إرسال التنبيه. حاول مرة أخرى.',
+        });
+      }
+    } catch (err) {
+      setReminderFeedback({
+        type: 'error',
+        text: err.message || 'تعذّر إرسال تنبيه ماتشات الغد.',
+      });
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   const kpis = [
@@ -305,6 +358,78 @@ export default function AdminDashboard() {
           >
             <CheckCircle2 size={16} aria-hidden="true" />
             <span>{statusFeedback.text}</span>
+          </div>
+        )}
+      </section>
+
+      {/* Tomorrow Matches Push Reminder Card */}
+      <section
+        aria-labelledby="tomorrow-reminder-heading"
+        className="glass-card rounded-3xl bg-ops-surface border-2 border-ops-border p-5 sm:p-6 shadow-[0_6px_22px_-8px_rgba(17,20,28,0.08)] space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ops-border">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-fanta-orange/15 text-fanta-orange flex items-center justify-center shrink-0">
+              <BellRing size={20} strokeWidth={2.4} aria-hidden="true" />
+            </div>
+            <div>
+              <h2
+                id="tomorrow-reminder-heading"
+                className="font-display font-extrabold text-xl text-ops-ink"
+              >
+                تنبيه مواعيد ماتشات الغد
+              </h2>
+              <p className="text-xs font-semibold text-ops-muted">
+                يرسل تلقائياً يومياً الساعة 7:00 مساءً بتوقيت القاهرة، أو يدوياً الآن ليوم{' '}
+                <strong className="text-ops-ink">{formatCairoLongDate(tomorrowReminder.tomorrowDate)}</strong>.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSendTomorrowReminder}
+            disabled={sendingReminder || tomorrowReminder.count === 0}
+            className="min-h-[44px] px-4 rounded-xl bg-fanta-orange hover:bg-fanta-orange-deep text-arena-bg font-display font-extrabold text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            {sendingReminder ? (
+              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Send size={16} aria-hidden="true" />
+            )}
+            <span>إرسال تنبيه ماتشات الغد</span>
+          </button>
+        </div>
+
+        {tomorrowReminder.count === 0 ? (
+          <div className="rounded-2xl bg-ops-bg border border-ops-border px-4 py-3 text-xs font-semibold text-ops-muted">
+            لا توجد مباريات مجدولة غداً ({tomorrowReminder.tomorrowDate}). عند جدولة مباريات ليوم غد ستظهر معاينتها هنا.
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-ops-bg border border-ops-border p-4 space-y-2">
+            <div className="text-xs font-display font-extrabold text-ops-ink">
+              معاينة الإشعار ({tomorrowReminder.count} {tomorrowReminder.count === 1 ? 'مباراة' : 'مباريات'}):
+            </div>
+            <div className="text-xs font-bold text-fanta-orange">{tomorrowReminder.title}</div>
+            <ul className="space-y-1 text-xs font-semibold text-ops-ink">
+              {tomorrowReminder.matches.map(item => (
+                <li key={item.id || item.line}>{item.line}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {reminderFeedback && (
+          <div
+            role="status"
+            className={`px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+              reminderFeedback.type === 'success'
+                ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
+                : 'bg-red-50 border border-red-300 text-red-700'
+            }`}
+          >
+            <CheckCircle2 size={16} aria-hidden="true" />
+            <span>{reminderFeedback.text}</span>
           </div>
         )}
       </section>

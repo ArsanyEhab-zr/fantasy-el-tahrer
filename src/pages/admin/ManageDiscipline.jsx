@@ -1,4 +1,4 @@
-import { notifyPenalty } from '../../utils/notifications';
+import { notifyPenalty, notifyPenaltyReversed } from '../../utils/notifications';
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import {
@@ -80,6 +80,7 @@ export default function ManageDiscipline() {
     }
     try {
       await reverseDisciplinaryPenalty(pen.id);
+      notifyPenaltyReversed(team?.nameAr || 'الفريق', pen.pointsDeducted, pen.reason, pen.matchId || '');
       setFeedback({ type: 'success', text: 'تم إلغاء قرار الخصم وإعادة النقاط للفريق.' });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل إلغاء الخصم.' });
