@@ -55,6 +55,8 @@ export default function RefereePage() {
   const {
     matches = [],
     players = [],
+    activePlayers = [],
+    getPlayer,
     getTeam,
     loading,
     settings,
@@ -111,8 +113,8 @@ export default function RefereePage() {
   const openLineupSetup = (match) => {
     const hId = match.homeTeamId || match.homeTeam;
     const aId = match.awayTeamId || match.awayTeam;
-    const hRoster = players.filter((p) => (p.teamId || p.team) === hId);
-    const aRoster = players.filter((p) => (p.teamId || p.team) === aId);
+    const hRoster = activePlayers.filter((p) => (p.teamId || p.team) === hId);
+    const aRoster = activePlayers.filter((p) => (p.teamId || p.team) === aId);
 
     setHomeStarters(hRoster.slice(0, 5).map((p) => p.id));
     setAwayStarters(aRoster.slice(0, 5).map((p) => p.id));
@@ -134,22 +136,24 @@ export default function RefereePage() {
     if (!setupMatch) return;
     const hId = setupMatch.homeTeamId || setupMatch.homeTeam;
     const aId = setupMatch.awayTeamId || setupMatch.awayTeam;
-    const hRoster = players.filter((p) => (p.teamId || p.team) === hId);
-    const aRoster = players.filter((p) => (p.teamId || p.team) === aId);
+    const hRoster = activePlayers.filter((p) => (p.teamId || p.team) === hId);
+    const aRoster = activePlayers.filter((p) => (p.teamId || p.team) === aId);
+    const validHome = homeStarters.filter((id) => hRoster.some((p) => p.id === id));
+    const validAway = awayStarters.filter((id) => aRoster.some((p) => p.id === id));
 
-    if (homeStarters.length === 0 || awayStarters.length === 0) {
+    if (validHome.length === 0 || validAway.length === 0) {
       showToast('يجب اختيار اللاعبين الأساسيين للفريقين (بحد أقصى 5 لكل فريق).', 'error');
       return;
     }
 
-    const hBench = hRoster.filter((p) => !homeStarters.includes(p.id)).map((p) => p.id);
-    const aBench = aRoster.filter((p) => !awayStarters.includes(p.id)).map((p) => p.id);
+    const hBench = hRoster.filter((p) => !validHome.includes(p.id)).map((p) => p.id);
+    const aBench = aRoster.filter((p) => !validAway.includes(p.id)).map((p) => p.id);
 
     setBusy(true);
     try {
       await kickOffMatch(setupMatch.id, {
-        homeActivePitch: homeStarters,
-        awayActivePitch: awayStarters,
+        homeActivePitch: validHome,
+        awayActivePitch: validAway,
         homeBench: hBench,
         awayBench: aBench,
         homeScore: setupMatch.homeScore ?? 0,
@@ -227,9 +231,12 @@ export default function RefereePage() {
   // Strict 2-Step Non-Rolling Substitution
   const handleConfirmSubstitution = async (offId, onId) => {
     if (!activeMatch || !offId || !onId) return;
-    const offPlayer = players.find((p) => p.id === offId);
-    const onPlayer = players.find((p) => p.id === onId);
-    if (!offPlayer || !onPlayer) return;
+    const offPlayer = getPlayer(offId) || players.find((p) => p.id === offId);
+    const onPlayer = activePlayers.find((p) => p.id === onId);
+    if (!offPlayer || !onPlayer) {
+      showToast('تعذر العثور على بيانات اللاعب. أعد المحاولة.', 'error');
+      return;
+    }
 
     setBusy(true);
     try {
@@ -357,10 +364,12 @@ export default function RefereePage() {
     const aId = setupMatch.awayTeamId || setupMatch.awayTeam;
     const homeTeam = getTeam(hId);
     const awayTeam = getTeam(aId);
-    const hRoster = players.filter((p) => (p.teamId || p.team) === hId);
-    const aRoster = players.filter((p) => (p.teamId || p.team) === aId);
+    const hRoster = activePlayers.filter((p) => (p.teamId || p.team) === hId);
+    const aRoster = activePlayers.filter((p) => (p.teamId || p.team) === aId);
+    const validHomeStarters = homeStarters.filter((id) => hRoster.some((p) => p.id === id));
+    const validAwayStarters = awayStarters.filter((id) => aRoster.some((p) => p.id === id));
     const currentRoster = lineupTab === 'home' ? hRoster : aRoster;
-    const currentSelected = lineupTab === 'home' ? homeStarters : awayStarters;
+    const currentSelected = lineupTab === 'home' ? validHomeStarters : validAwayStarters;
 
     return (
       <div className="space-y-4 pb-8">
@@ -412,7 +421,7 @@ export default function RefereePage() {
           >
             <span className="truncate">{homeTeam?.short || homeTeam?.nameAr}</span>
             <span className="num-tabular px-2 py-0.5 rounded-md bg-black/20 text-xs">
-              {homeStarters.length}/5
+              {validHomeStarters.length}/5
             </span>
           </button>
           <button
@@ -426,7 +435,7 @@ export default function RefereePage() {
           >
             <span className="truncate">{awayTeam?.short || awayTeam?.nameAr}</span>
             <span className="num-tabular px-2 py-0.5 rounded-md bg-black/20 text-xs">
-              {awayStarters.length}/5
+              {validAwayStarters.length}/5
             </span>
           </button>
         </div>
@@ -484,7 +493,7 @@ export default function RefereePage() {
         {/* Giant Kick-off Button */}
         <button
           type="button"
-          disabled={busy || homeStarters.length === 0 || awayStarters.length === 0}
+          disabled={busy || validHomeStarters.length === 0 || validAwayStarters.length === 0}
           onClick={handleKickOff}
           className="w-full min-h-[60px] rounded-2xl bg-fanta-volt hover:bg-fanta-volt-dim text-arena-bg font-display font-extrabold text-lg flex items-center justify-center gap-2.5 shadow-[0_12px_30px_-8px_rgba(164,212,182,0.5)] cursor-pointer active:scale-[0.98] disabled:opacity-40"
         >
@@ -507,8 +516,10 @@ export default function RefereePage() {
 
     const homeActiveIds = activeMatch.homeActivePitch || [];
     const awayActiveIds = activeMatch.awayActivePitch || [];
-    const homeActivePlayers = players.filter((p) => homeActiveIds.includes(p.id));
-    const awayActivePlayers = players.filter((p) => awayActiveIds.includes(p.id));
+    const resolvePitchPlayer = (id, teamId) =>
+      getPlayer(id) || { id, nameAr: 'لاعب مسجل سابقاً', teamId, team: teamId, jerseyNumber: null, isMissing: true };
+    const homeActivePlayers = homeActiveIds.map((id) => resolvePitchPlayer(id, hId));
+    const awayActivePlayers = awayActiveIds.map((id) => resolvePitchPlayer(id, aId));
 
     const playerYellowCounts = {};
     (activeMatch.events || []).forEach((ev) => {
@@ -518,14 +529,20 @@ export default function RefereePage() {
     });
 
     const subOffPlayer = actionModal.subOffPlayerId
-      ? players.find((p) => p.id === actionModal.subOffPlayerId)
+      ? resolvePitchPlayer(
+          actionModal.subOffPlayerId,
+          awayActiveIds.includes(actionModal.subOffPlayerId) ? aId : hId
+        )
       : null;
     const subBenchPlayers = (() => {
       if (!subOffPlayer) return [];
       const isHome = (subOffPlayer.teamId || subOffPlayer.team) === hId;
-      const benchIds = isHome ? activeMatch.homeBench || [] : activeMatch.awayBench || [];
+      const teamId = isHome ? hId : aId;
+      const pitchIds = isHome ? homeActiveIds : awayActiveIds;
       const subbedOffIds = isHome ? activeMatch.homeSubbedOff || [] : activeMatch.awaySubbedOff || [];
-      return players.filter((p) => benchIds.includes(p.id) && !subbedOffIds.includes(p.id));
+      return activePlayers.filter(
+        (p) => (p.teamId || p.team) === teamId && !pitchIds.includes(p.id) && !subbedOffIds.includes(p.id)
+      );
     })();
 
     const slots = settings?.enableKnockout ? bracketSlotsFor(activeMatch) : [];

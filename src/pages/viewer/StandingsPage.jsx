@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { BarChart3, AlertTriangle } from 'lucide-react';
 import { useTournament } from '../../hooks/TournamentContext';
 import GroupTable from '../../components/tournament/GroupTable';
+import TeamRosterModal from '../../components/tournament/TeamRosterModal';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 import { StaggerList, StaggerItem, RevealBlock } from '../../components/ui/MotionPrimitives';
 
@@ -15,6 +17,7 @@ export default function StandingsPage() {
     getTeam,
     loading,
   } = useTournament();
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
 
   const validGroups = groups.filter((g) => g.standings && g.standings.length > 0);
 
@@ -47,6 +50,7 @@ export default function StandingsPage() {
               <GroupTable
                 groupName={group.name || group.id}
                 standings={group.standings}
+                onSelectTeam={setSelectedTeamId}
               />
             </StaggerItem>
           ))}
@@ -91,6 +95,8 @@ export default function StandingsPage() {
           </ul>
         </section>
       )}
+
+      <TeamRosterModal teamId={selectedTeamId} onClose={() => setSelectedTeamId(null)} />
     </div>
   );
 }

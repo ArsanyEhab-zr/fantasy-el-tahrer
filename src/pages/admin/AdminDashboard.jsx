@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const {
     teams = [],
-    players = [],
+    activePlayers = [],
     matches = [],
     groups = [],
     penalties = [],
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
 
   const kpis = [
     { label: 'الفرق المسجلة', value: teams.length, icon: Shield, to: '/teams' },
-    { label: 'اللاعبون', value: players.length, icon: Users, to: '/players' },
+    { label: 'اللاعبون', value: activePlayers.length, icon: Users, to: '/players' },
     { label: 'المباريات', value: matches.length, icon: CalendarClock, to: '/matches' },
     { label: 'قرارات الخصم', value: penalties.length, icon: Scale, to: '/discipline' },
   ];

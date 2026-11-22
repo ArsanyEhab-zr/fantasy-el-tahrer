@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { db } from '../../utils/firebase';
+import { publishSnapshotSections } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 import TeamCrest from '../../components/ui/TeamCrest';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -96,6 +97,7 @@ export default function ManageMatches() {
 
       if (editingId) {
         await updateDoc(doc(db, 'matches', String(editingId)), payload);
+        await publishSnapshotSections(['matches']);
         setFeedback({ type: 'success', text: 'تم تحديث تفاصيل وموعد المباراة بنجاح.' });
       } else {
         await addDoc(collection(db, 'matches'), {
@@ -104,6 +106,7 @@ export default function ManageMatches() {
           accumulatedSeconds: 0,
           events: [],
         });
+        await publishSnapshotSections(['matches']);
         setFeedback({ type: 'success', text: 'تمت جدولة المباراة بنجاح.' });
       }
       picker.select(matchDay);
@@ -134,6 +137,7 @@ export default function ManageMatches() {
     if (!window.confirm('هل أنت متأكد من حذف هذه المباراة نهائياً؟')) return;
     try {
       await deleteDoc(doc(db, 'matches', String(id)));
+      await publishSnapshotSections(['matches']);
       setFeedback({ type: 'success', text: 'تم حذف المباراة بنجاح.' });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حذف المباراة.' });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Layers, Plus, Trash2, Sparkles, Pencil, CheckCircle2 } from 'lucide-react';
 import { db } from '../../utils/firebase';
+import { publishSnapshotSections } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 import TeamCrest from '../../components/ui/TeamCrest';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
@@ -39,9 +40,11 @@ export default function ManageGroups() {
       };
       if (editingId) {
         await updateDoc(doc(db, 'groups', String(editingId)), payload);
+        await publishSnapshotSections(['groups']);
         setFeedback({ type: 'success', text: 'تم تحديث المجموعة بنجاح.' });
       } else {
         await addDoc(collection(db, 'groups'), payload);
+        await publishSnapshotSections(['groups']);
         setFeedback({ type: 'success', text: 'تم إنشاء المجموعة بنجاح.' });
       }
       resetForm();
@@ -63,6 +66,7 @@ export default function ManageGroups() {
     if (!window.confirm(`حذف مجموعة "${group.name}"؟`)) return;
     try {
       await deleteDoc(doc(db, 'groups', String(group.id)));
+      await publishSnapshotSections(['groups']);
       setFeedback({ type: 'success', text: `تم حذف ${group.name}.` });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حذف المجموعة.' });
@@ -100,6 +104,7 @@ export default function ManageGroups() {
         }
       }
       await batch.commit();
+      await publishSnapshotSections(['matches']);
       setFeedback({
         type: 'success',
         text: `تم توليد مباريات ${group.name} — يمكنك الآن تحديد تواريخها ومواعيدها من جدول المباريات.`,

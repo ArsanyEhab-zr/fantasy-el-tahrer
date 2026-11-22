@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMatchdays } from '../../hooks/useMatchdays';
 import MatchdaySelector from '../../components/match/MatchdaySelector';
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,7 +9,7 @@ import {
   GitBranch,
   CalendarClock,
   ChevronLeft,
-
+  Users,
 } from 'lucide-react';
 import { useTournament } from '../../hooks/TournamentContext';
 import MatchdayHero from '../../components/match/MatchdayHero';
@@ -16,6 +17,7 @@ import { matchViewerUrl } from '../../utils/formatters';
 import ScoreBoard from '../../components/match/ScoreBoard';
 import MatchCard from '../../components/match/MatchCard';
 import TeamCrest from '../../components/ui/TeamCrest';
+import TeamRosterModal from '../../components/tournament/TeamRosterModal';
 import { StaggerList, StaggerItem } from '../../components/ui/MotionPrimitives';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
@@ -27,12 +29,15 @@ import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates'
 export default function HomePage() {
   const navigate = useNavigate();
   const {
+    teams = [],
+    activePlayers = [],
     matches,
     topScorers = [],
     getTeam,
     loading,
     settings,
   } = useTournament();
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
 
   const enableKnockout = Boolean(settings?.enableKnockout);
   const picker = useMatchdays(matches);
@@ -223,7 +228,49 @@ export default function HomePage() {
         </section>
       </div>
 
+      {/* League Teams & Live Rosters */}
+      {teams.length > 0 && (
+        <section aria-labelledby="league-teams-heading" className="space-y-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <h2
+              id="league-teams-heading"
+              className="font-display font-extrabold text-xl text-arena-ink flex items-center gap-2"
+            >
+              <Users size={21} className="text-fanta-orange" aria-hidden="true" />
+              <span>فرق الدوري وقوائم اللاعبين</span>
+            </h2>
+            <span className="text-xs font-display font-bold text-arena-muted num-tabular">
+              {teams.length} فرق
+            </span>
+          </div>
 
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {teams.map((team) => {
+              const count = activePlayers.filter((p) => (p.teamId || p.team) === team.id).length;
+              return (
+                <button
+                  key={team.id}
+                  type="button"
+                  onClick={() => setSelectedTeamId(team.id)}
+                  className="glass-card rounded-2xl bg-arena-surface border-2 border-arena-border hover:border-fanta-orange/60 p-3 flex items-center gap-3 text-right transition-colors cursor-pointer active:scale-[0.98]"
+                >
+                  <TeamCrest team={team} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display font-extrabold text-sm text-arena-ink truncate">
+                      {team.nameAr}
+                    </div>
+                    <div className="text-xs font-semibold text-arena-muted num-tabular">
+                      {count} لاعب
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <TeamRosterModal teamId={selectedTeamId} onClose={() => setSelectedTeamId(null)} />
       </div>
     </>
   );

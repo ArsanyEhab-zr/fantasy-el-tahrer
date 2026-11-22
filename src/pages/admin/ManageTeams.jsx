@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Shield, Plus, Pencil, Trash2, Users, CheckCircle2 } from 'lucide-react';
 import { db } from '../../utils/firebase';
+import { publishSnapshotSections } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 import TeamCrest from '../../components/ui/TeamCrest';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
 export default function ManageTeams() {
   const navigate = useNavigate();
-  const { teams = [], players = [], groups = [], loading } = useTournament();
+  const { teams = [], activePlayers = [], groups = [], matches = [], penalties = [], loading } = useTournament();
 
   const [editingId, setEditingId] = useState(null);
   const [nameAr, setNameAr] = useState('');
@@ -48,10 +49,12 @@ export default function ManageTeams() {
       };
       if (editingId) {
         await updateDoc(doc(db, 'teams', String(editingId)), payload);
-        setFeedback({ type: 'success', text: 'تم تحديث بيانات الفريق بنجاح.' });
+        await publishSnapshotSections(['teams']);
+        setFeedback({ type: 'success', text: 'تم تحديث بيانات الفريق ومزامنتها بنجاح.' });
       } else {
         await addDoc(collection(db, 'teams'), payload);
-        setFeedback({ type: 'success', text: 'تم إضافة الفريق الجديد بنجاح.' });
+        await publishSnapshotSections(['teams']);
+        setFeedback({ type: 'success', text: 'تم إضافة الفريق الجديد ومزامنته بنجاح.' });
       }
       resetForm();
     } catch (err) {
@@ -74,13 +77,32 @@ export default function ManageTeams() {
   };
 
   const handleDelete = async (team) => {
+    const tid = String(team.id);
+    const hasMatches = matches.some((m) => m.homeTeamId === tid || m.awayTeamId === tid);
+    const hasGroups = groups.some((g) => (g.teams || []).includes(tid));
+    const hasPlayers = activePlayers.some((p) => (p.teamId || p.team) === tid);
+    const hasPenalties = penalties.some((pen) => pen.teamId === tid);
+
+    if (hasMatches || hasGroups || hasPlayers || hasPenalties) {
+      setFeedback({
+        type: 'error',
+        text: `لا يمكن حذف فريق "${team.nameAr}" لارتباطه بسجلات قائمة (مباريات، مجموعات، لاعبين نشطين، أو خصومات) حفاظاً على سلامة البيانات التاريخية.`,
+      });
+      return;
+    }
+
     if (!window.confirm(`هل أنت متأكد من حذف فريق "${team.nameAr}"؟`)) return;
+    setSaving(true);
+    setFeedback(null);
     try {
-      await deleteDoc(doc(db, 'teams', String(team.id)));
+      await deleteDoc(doc(db, 'teams', tid));
+      await publishSnapshotSections(['teams']);
       if (editingId === team.id) resetForm();
       setFeedback({ type: 'success', text: `تم حذف فريق ${team.nameAr}.` });
     } catch (err) {
       setFeedback({ type: 'error', text: err.message || 'فشل حذف الفريق.' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -228,7 +250,7 @@ export default function ManageTeams() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {teams.map((team) => {
-              const rosterCount = players.filter(
+              const rosterCount = activePlayers.filter(
                 (p) => (p.teamId || p.team) === team.id
               ).length;
               const groupName = getTeamGroupName(team.id);

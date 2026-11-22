@@ -14,6 +14,7 @@ import { db } from '../../utils/firebase';
 import {
   applyDisciplinaryPenalty,
   reverseDisciplinaryPenalty,
+  publishSnapshotSections,
 } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 import TeamCrest from '../../components/ui/TeamCrest';
@@ -27,7 +28,7 @@ const PRESET_REASONS = ['شغب', 'انسحاب', 'سلوك غير رياضي', 
  * Tab 2: Emergency player stat overrides (Goals, Yellow, Red ONLY — ZERO Assists).
  */
 export default function ManageDiscipline() {
-  const { teams = [], players = [], penalties = [], getTeam } = useTournament();
+  const { teams = [], activePlayers: players = [], penalties = [], getTeam } = useTournament();
 
   const [activeTab, setActiveTab] = useState('penalties');
   const [feedback, setFeedback] = useState(null);
@@ -98,6 +99,7 @@ export default function ManageDiscipline() {
         manualYellowOffset: (parseInt(edited.yellowCards, 10) || 0) - matchYellow,
         manualRedOffset: (parseInt(edited.redCards, 10) || 0) - matchRed,
       });
+      await publishSnapshotSections(['players']);
       setStatEdits(prev => {
         const next = { ...prev };
         delete next[player.id];

@@ -8,7 +8,7 @@ import {
   normalizeTournamentSettings,
   normalizeMatch,
   normalizePlayer,
-  normalizePenalty, syncPublicSnapshot,
+  normalizePenalty,
 } from '../utils/tournamentSchema';
 import { parseTimestamp } from '../utils/formatters';
 
@@ -74,7 +74,6 @@ export function TournamentProvider({ children }) {
         const data = single ? snap.data() || {} : snap.docs.map(d => ({ ...d.data({ serverTimestamps: 'estimate' }), id: d.id }));
         apply(key, data);
         resolved(key);
-        if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites) syncPublicSnapshot(key);
       }, error => { console.error(key, error.code); resolved(key); });
     });
     return () => stops.forEach(stop => stop());
@@ -131,6 +130,11 @@ export function TournamentProvider({ children }) {
       };
     });
   }, [rawPlayers, matches]);
+
+  const activePlayers = useMemo(
+    () => computedPlayers.filter((p) => !p.isArchived),
+    [computedPlayers]
+  );
 
   const playerMap = useMemo(() => {
     const map = new Map();
@@ -323,6 +327,7 @@ export function TournamentProvider({ children }) {
       bracketConfig,
       teams,
       players: computedPlayers,
+      activePlayers,
       matches,
       groups: computedGroups,
       penalties,
@@ -341,6 +346,7 @@ export function TournamentProvider({ children }) {
       bracketConfig,
       teams,
       computedPlayers,
+      activePlayers,
       matches,
       computedGroups,
       penalties,

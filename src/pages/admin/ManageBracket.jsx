@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { doc, setDoc, runTransaction } from 'firebase/firestore';
 import { GitBranch, AlertTriangle, Save, CheckCircle2 } from 'lucide-react';
 import { db } from '../../utils/firebase';
-import { saveTournamentSettings } from '../../utils/tournamentSchema';
+import { saveTournamentSettings, publishSnapshotSections } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 
 const BRACKET_SLOTS = {
@@ -57,6 +57,7 @@ export default function ManageBracket() {
   const handleSaveSize = async () => {
     try {
       await setDoc(doc(db, 'config', 'bracket'), { size: Number(size) }, { merge: true });
+      await publishSnapshotSections(['bracket']);
       setSize(null);
       setFeedback({ type: 'success', text: `تم ضبط حجم شجرة الإقصائيات على ${size} فرق.` });
     } catch (err) {
@@ -85,6 +86,7 @@ export default function ManageBracket() {
         if (!snap.exists()) Object.assign(update, {homeScore: 0, awayScore: 0, status: 'مجدولة', timerStatus: 'idle'});
         tx.set(ref, update, { merge: true });
       });
+      await publishSnapshotSections(['matches']);
       setBracketState(prev => {
         const remaining = { ...prev };
         delete remaining[slotId];

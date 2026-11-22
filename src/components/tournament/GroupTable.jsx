@@ -11,7 +11,7 @@ import TeamCrest from '../ui/TeamCrest';
 export default function GroupTable({
   groupName,
   standings = [],
-
+  onSelectTeam = null,
   className = '',
 }) {
   const { getTeam } = useTournament();
@@ -93,9 +93,19 @@ export default function GroupTable({
                       <TeamCrest team={team} size="xs" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-display font-bold text-sm sm:text-base text-arena-ink truncate max-w-[130px] sm:max-w-[220px]">
-                            {team?.nameAr || team?.short || 'فريق غير معروف'}
-                          </span>
+                          {onSelectTeam ? (
+                            <button
+                              type="button"
+                              onClick={() => onSelectTeam(entry.teamId)}
+                              className="font-display font-bold text-sm sm:text-base text-arena-ink hover:text-fanta-orange transition-colors truncate max-w-[130px] sm:max-w-[220px] text-right cursor-pointer"
+                            >
+                              {team?.nameAr || team?.short || 'فريق غير معروف'}
+                            </button>
+                          ) : (
+                            <span className="font-display font-bold text-sm sm:text-base text-arena-ink truncate max-w-[130px] sm:max-w-[220px]">
+                              {team?.nameAr || team?.short || 'فريق غير معروف'}
+                            </span>
+                          )}
                           {entry.isLiveActive && (
                             <span
                               title="مباراة جارية الآن"

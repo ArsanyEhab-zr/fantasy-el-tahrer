@@ -7,6 +7,7 @@ import ScoreBoard from '../../components/match/ScoreBoard';
 import MatchTimeline from '../../components/match/MatchTimeline';
 import MatchCard from '../../components/match/MatchCard';
 import EventOverlay from '../../components/ui/EventOverlay';
+import TeamRosterModal from '../../components/tournament/TeamRosterModal';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 import { RevealBlock } from '../../components/ui/MotionPrimitives';
 
@@ -35,10 +36,11 @@ export default function LiveMatchPage() {
 function MatchBroadcast({ matchId }) {
   const navigate = useNavigate();
   const { match, events, loading, error } = useLiveMatch(matchId);
-  const { upcomingMatches: contextUpcoming = [], players = [], getTeam } = useTournament();
+  const { upcomingMatches: contextUpcoming = [], getPlayer, getTeam } = useTournament();
 
   const [activeTab, setActiveTab] = useState('timeline');
   const [overlayEvent, setOverlayEvent] = useState(null);
+  const [rosterTeamId, setRosterTeamId] = useState(null);
 
   const hydratedMatchIdRef = useRef(null);
   const seenEventIdsRef = useRef(new Set());
@@ -121,12 +123,23 @@ function MatchBroadcast({ matchId }) {
 
   const homeTeam = getTeam(match.homeTeamId || match.homeTeam);
   const awayTeam = getTeam(match.awayTeamId || match.awayTeam);
-  const homePitchPlayers = (match.homeActivePitch || [])
-    .map((id) => players.find((p) => p.id === id))
-    .filter(Boolean);
-  const awayPitchPlayers = (match.awayActivePitch || [])
-    .map((id) => players.find((p) => p.id === id))
-    .filter(Boolean);
+  const resolvePitchPlayer = (id) => {
+    const found = getPlayer(id);
+    if (found) return found;
+    const ev = (events || []).find((e) => e.playerId === id || e.playerInId === id || e.playerOutId === id);
+    const recoveredName = ev
+      ? (ev.playerOutId === id ? ev.playerOutName : ev.playerInId === id ? ev.playerInName : ev.playerName)
+      : null;
+    return {
+      id: String(id),
+      nameAr: recoveredName || 'لاعب مسجل سابقاً',
+      position: 'لاعب',
+      jerseyNumber: null,
+      isFallback: true,
+    };
+  };
+  const homePitchPlayers = (match.homeActivePitch || []).map(resolvePitchPlayer);
+  const awayPitchPlayers = (match.awayActivePitch || []).map(resolvePitchPlayer);
 
   return (
     <div className="space-y-6">
@@ -190,36 +203,63 @@ function MatchBroadcast({ matchId }) {
               key={side.team?.id || idx}
               className="glass-card rounded-2xl bg-arena-surface border-2 border-arena-border p-4 space-y-3"
             >
-              <div className="flex items-center justify-between pb-2.5 border-b border-arena-border">
-                <h3 className={`font-display font-extrabold text-base ${side.accent}`}>
+              <div className="flex items-center justify-between pb-2.5 border-b border-arena-border gap-2">
+                <h3 className={`font-display font-extrabold text-base ${side.accent} truncate`}>
                   {side.team?.nameAr || (idx === 0 ? 'الفريق الأول' : 'الفريق الثاني')}
                 </h3>
-                <span className="num-tabular text-xs font-bold px-2 py-0.5 rounded-md bg-arena-elevated text-arena-muted">
-                  {side.list.length} / 5
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {side.team?.id && (
+                    <button
+                      type="button"
+                      onClick={() => setRosterTeamId(side.team.id)}
+                      className="text-xs font-display font-bold text-fanta-orange hover:underline cursor-pointer"
+                    >
+                      القائمة الكاملة
+                    </button>
+                  )}
+                  <span className="num-tabular text-xs font-bold px-2 py-0.5 rounded-md bg-arena-elevated text-arena-muted">
+                    {side.list.length} / 5
+                  </span>
+                </div>
               </div>
 
               {side.list.length > 0 ? (
                 <ul className="space-y-2">
                   {side.list.map((player) => (
                     <li key={player.id}>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/player/${player.id}`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-arena-bg border border-arena-border hover:border-fanta-orange/50 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-7 h-7 rounded-lg bg-arena-elevated text-arena-ink font-display font-extrabold text-xs num-tabular flex items-center justify-center shrink-0">
-                            {player.jerseyNumber ?? '—'}
-                          </span>
-                          <span className="font-bold text-sm text-arena-ink truncate">
-                            {player.nameAr}
+                      {player.isFallback ? (
+                        <div className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-arena-bg border border-arena-border/60 opacity-80">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-7 h-7 rounded-lg bg-arena-elevated text-arena-muted font-display font-extrabold text-xs num-tabular flex items-center justify-center shrink-0">
+                              —
+                            </span>
+                            <span className="font-bold text-sm text-arena-ink truncate">
+                              {player.nameAr}
+                            </span>
+                          </div>
+                          <span className="text-xs font-semibold text-arena-muted shrink-0">
+                            {player.position}
                           </span>
                         </div>
-                        <span className="text-xs font-semibold text-arena-muted shrink-0">
-                          {player.position || 'لاعب'}
-                        </span>
-                      </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/player/${player.id}`)}
+                          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-arena-bg border border-arena-border hover:border-fanta-orange/50 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-7 h-7 rounded-lg bg-arena-elevated text-arena-ink font-display font-extrabold text-xs num-tabular flex items-center justify-center shrink-0">
+                              {player.jerseyNumber ?? '—'}
+                            </span>
+                            <span className="font-bold text-sm text-arena-ink truncate">
+                              {player.nameAr}
+                            </span>
+                          </div>
+                          <span className="text-xs font-semibold text-arena-muted shrink-0">
+                            {player.position || 'لاعب'}
+                          </span>
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -232,6 +272,8 @@ function MatchBroadcast({ matchId }) {
           ))}
         </section>
       )}
+
+      <TeamRosterModal teamId={rosterTeamId} onClose={() => setRosterTeamId(null)} />
     </div>
   );
 }

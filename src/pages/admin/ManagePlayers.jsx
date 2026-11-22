@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { Users, Plus, Pencil, Trash2, Search, CheckCircle2 } from 'lucide-react';
 import { db } from '../../utils/firebase';
+import { publishSnapshotSections } from '../../utils/tournamentSchema';
 import { useTournament } from '../../hooks/TournamentContext';
 import { LoadingSkeleton, EmptyState } from '../../components/ui/FeedbackStates';
 
@@ -20,7 +21,7 @@ export default function ManagePlayers() {
 }
 
 function PlayerRoster({ initialTeamFilter }) {
-  const { teams = [], players = [], loading, getTeam } = useTournament();
+  const { teams = [], activePlayers: players = [], loading, getTeam } = useTournament();
 
   const [filterTeam, setFilterTeam] = useState(initialTeamFilter);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,10 +57,12 @@ function PlayerRoster({ initialTeamFilter }) {
       };
       if (editingId) {
         await updateDoc(doc(db, 'players', String(editingId)), payload);
-        setFeedback({ type: 'success', text: 'تم تحديث بيانات اللاعب.' });
+        await publishSnapshotSections(['players']);
+        setFeedback({ type: 'success', text: 'تم تحديث بيانات اللاعب ومزامنته مع الحكم والجمهور.' });
       } else {
-        await addDoc(collection(db, 'players'), { ...payload, goals: 0, manualGoalOffset: 0, manualYellowOffset: 0, manualRedOffset: 0 });
-        setFeedback({ type: 'success', text: 'تمت إضافة اللاعب إلى قائمة الفريق.' });
+        await addDoc(collection(db, 'players'), { ...payload, isArchived: false, goals: 0, manualGoalOffset: 0, manualYellowOffset: 0, manualRedOffset: 0 });
+        await publishSnapshotSections(['players']);
+        setFeedback({ type: 'success', text: 'تمت إضافة اللاعب ومزامنته مع الحكم والجمهور.' });
       }
       resetForm();
     } catch (err) {
@@ -79,13 +82,21 @@ function PlayerRoster({ initialTeamFilter }) {
   };
 
   const handleDelete = async (player) => {
-    if (!window.confirm(`حذف اللاعب "${player.nameAr}" نهائياً؟`)) return;
+    if (!window.confirm(`إزالة اللاعب "${player.nameAr}" من قائمة الفريق؟ (ستظل أهدافه ومبارياته التاريخية محفوظة)`)) return;
+    setSaving(true);
+    setFeedback(null);
     try {
-      await deleteDoc(doc(db, 'players', String(player.id)));
+      await updateDoc(doc(db, 'players', String(player.id)), {
+        isArchived: true,
+        archivedAt: new Date().toISOString(),
+      });
+      await publishSnapshotSections(['players']);
       if (editingId === player.id) resetForm();
-      setFeedback({ type: 'success', text: `تم حذف ${player.nameAr}.` });
+      setFeedback({ type: 'success', text: `تمت أرشفة ${player.nameAr} وإزالته من القوائم النشطة بأمان.` });
     } catch (err) {
-      setFeedback({ type: 'error', text: err.message || 'فشل حذف اللاعب.' });
+      setFeedback({ type: 'error', text: err.message || 'فشل إزالة اللاعب.' });
+    } finally {
+      setSaving(false);
     }
   };
 

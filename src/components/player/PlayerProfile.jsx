@@ -26,9 +26,16 @@ export default function PlayerProfile({ player }) {
           </div>
 
           <div className="flex-1 text-center sm:text-right min-w-0">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-fanta-volt text-arena-bg font-display font-extrabold text-xs mb-2">
-              {player.position || 'لاعب'}
-            </span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-fanta-volt text-arena-bg font-display font-extrabold text-xs">
+                {player.position || 'لاعب'}
+              </span>
+              {player.isArchived && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-arena-elevated border border-arena-border text-arena-muted font-display font-bold text-xs">
+                  لاعب سابق
+                </span>
+              )}
+            </div>
             <h1 className="font-display font-extrabold text-3xl text-arena-ink leading-tight">
               {player.nameAr}
             </h1>

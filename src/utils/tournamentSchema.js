@@ -137,6 +137,7 @@ export const normalizePlayer = (raw, id) => {
         : null,
     teamId,
     team: teamId,
+    isArchived: Boolean(data.isArchived),
     manualGoalOffset: Number.isFinite(Number(data.manualGoalOffset))
       ? Number(data.manualGoalOffset)
       : 0,
@@ -186,6 +187,7 @@ export const saveTournamentSettings = async (partial) => {
     payload.halfDurationMinutes = Math.floor(safeHalf);
   }
   await setDoc(doc(db, 'config', 'tournament'), payload, { merge: true });
+  await publishSnapshotSections(['settings']);
 };
 
 /**
@@ -196,7 +198,7 @@ export const kickOffMatch = async (
   { homeActivePitch, awayActivePitch, homeBench, awayBench, homeScore = 0, awayScore = 0 }
 ) => {
   const ref = doc(db, 'matches', String(matchId));
-  return runTransaction(db, async tx => {
+  await runTransaction(db, async tx => {
     const snap = await tx.get(ref);
     if (!snap.exists() || !['مجدولة', 'قادمة', 'scheduled'].includes(snap.data().status || 'مجدولة')) {
       throw new Error('تغيّرت حالة المباراة. أعد فتح قائمة المباريات.');
@@ -217,13 +219,14 @@ export const kickOffMatch = async (
       awaySubbedOff: [],
     });
   });
+  await publishSnapshotSections(['matches']);
 };
 
 /**
  * Pause the match clock (e.g., Halftime) and persist accumulatedSeconds atomically.
  */
 export const pauseMatchClock = async (matchId, clockSnapshot) => {
-  return editLiveMatch(matchId, (tx, ref, match) => {
+  const result = await editLiveMatch(matchId, (tx, ref, match) => {
     if (match.timerStatus !== 'running') throw new Error('تغيّرت حالة ساعة المباراة.');
     tx.update(ref, {
       timerStatus: 'paused',
@@ -232,13 +235,15 @@ export const pauseMatchClock = async (matchId, clockSnapshot) => {
       minute: clockSnapshot.minute || 0,
     });
   });
+  await publishSnapshotSections(['matches']);
+  return result;
 };
 
 /**
  * Resume the match clock seamlessly from accumulatedSeconds using serverTimestamp().
  */
 export const resumeMatchClock = async (matchId, clockSnapshot) => {
-  return editLiveMatch(matchId, (tx, ref, match) => {
+  const result = await editLiveMatch(matchId, (tx, ref, match) => {
     if (match.timerStatus !== 'paused') throw new Error('تغيّرت حالة ساعة المباراة.');
     tx.update(ref, {
       timerStatus: 'running',
@@ -246,6 +251,8 @@ export const resumeMatchClock = async (matchId, clockSnapshot) => {
       accumulatedSeconds: Math.max(0, Math.floor(clockSnapshot.totalSeconds || 0)),
     });
   });
+  await publishSnapshotSections(['matches']);
+  return result;
 };
 
 // Read the current match on every Firestore retry, including its unmodified legacy event array.
@@ -274,7 +281,7 @@ export const recordPlayerMatchEvent = async ({
   actionType,
   clockSnapshot,
 }) => {
-  return editLiveMatch(selected.id, (tx, ref, match) => {
+  const result = await editLiveMatch(selected.id, (tx, ref, match) => {
     const pTeamId = player.teamId || player.team;
     const side = teamSide(match, pTeamId);
     const pitchField = side + 'ActivePitch';
@@ -339,6 +346,8 @@ export const recordPlayerMatchEvent = async ({
     tx.update(ref, updates);
     return { finalType, homeScore: updates.homeScore ?? match.homeScore, awayScore: updates.awayScore ?? match.awayScore };
   });
+  await publishSnapshotSections(['matches']);
+  return result;
 };
 
 /**
@@ -346,44 +355,48 @@ export const recordPlayerMatchEvent = async ({
  */
 export const recordSubstitutionEvent = async ({
   match: selected, offPlayer, onPlayer, clockSnapshot,
-}) => editLiveMatch(selected.id, (tx, ref, match) => {
-  const pTeamId = offPlayer.teamId || offPlayer.team;
-  const side = teamSide(match, pTeamId);
-  const pitchField = side + 'ActivePitch';
-  const benchField = side + 'Bench';
-  const subbedField = side + 'SubbedOff';
-  if ((onPlayer.teamId || onPlayer.team) !== pTeamId ||
-      !match[pitchField].includes(offPlayer.id) || !match[benchField].includes(onPlayer.id) ||
-      match[subbedField].includes(onPlayer.id)) throw new Error('تغيّرت التشكيلة. اختر اللاعبين مجدداً.');
+}) => {
+  await editLiveMatch(selected.id, (tx, ref, match) => {
+    const pTeamId = offPlayer.teamId || offPlayer.team;
+    const side = teamSide(match, pTeamId);
+    const pitchField = side + 'ActivePitch';
+    const benchField = side + 'Bench';
+    const subbedField = side + 'SubbedOff';
+    if ((onPlayer.teamId || onPlayer.team) !== pTeamId ||
+        onPlayer.isArchived ||
+        !match[pitchField].includes(offPlayer.id) || match[pitchField].includes(onPlayer.id) ||
+        match[subbedField].includes(onPlayer.id)) throw new Error('تغيّرت التشكيلة. اختر اللاعبين مجدداً.');
 
-  const nextPitch = [...(match[pitchField] || []).filter((id) => id !== offPlayer.id), onPlayer.id];
-  const nextBench = (match[benchField] || []).filter((id) => id !== onPlayer.id);
-  const nextSubbedOff = Array.from(new Set([...(match[subbedField] || []), offPlayer.id]));
+    const nextPitch = [...(match[pitchField] || []).filter((id) => id !== offPlayer.id), onPlayer.id];
+    const nextBench = (match[benchField] || []).filter((id) => id !== onPlayer.id);
+    const nextSubbedOff = Array.from(new Set([...(match[subbedField] || []), offPlayer.id]));
 
-  const subEvent = {
-    id: makeEventId('sub'),
-    type: 'sub',
-    teamId: pTeamId,
-    playerId: onPlayer.id,
-    playerInId: onPlayer.id,
-    playerOutId: offPlayer.id,
-    playerInName: onPlayer.nameAr,
-    playerOutName: offPlayer.nameAr,
-    playerName: onPlayer.nameAr,
-    minute: clockSnapshot.minute,
-    displayMinute: clockSnapshot.displayMinute,
-    detail: `دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}`,
-    createdAt: new Date().toISOString(),
-  };
+    const subEvent = {
+      id: makeEventId('sub'),
+      type: 'sub',
+      teamId: pTeamId,
+      playerId: onPlayer.id,
+      playerInId: onPlayer.id,
+      playerOutId: offPlayer.id,
+      playerInName: onPlayer.nameAr,
+      playerOutName: offPlayer.nameAr,
+      playerName: onPlayer.nameAr,
+      minute: clockSnapshot.minute,
+      displayMinute: clockSnapshot.displayMinute,
+      detail: `دخول ${onPlayer.nameAr} بدلاً من ${offPlayer.nameAr}`,
+      createdAt: new Date().toISOString(),
+    };
 
-  tx.update(ref, {
-    [pitchField]: nextPitch,
-    [benchField]: nextBench,
-    [subbedField]: nextSubbedOff,
-    minute: clockSnapshot.minute,
-    events: arrayUnion(subEvent),
+    tx.update(ref, {
+      [pitchField]: nextPitch,
+      [benchField]: nextBench,
+      [subbedField]: nextSubbedOff,
+      minute: clockSnapshot.minute,
+      events: arrayUnion(subEvent),
+    });
   });
-});
+  await publishSnapshotSections(['matches']);
+};
 
 /**
  * Create a disciplinary point deduction in `penalties` collection,
@@ -405,7 +418,11 @@ export const applyDisciplinaryPenalty = async ({
     teamId: String(teamId), matchId: matchId ? String(matchId) : null,
     pointsDeducted: safePoints, reason: safeReason, createdAt: serverTimestamp(),
   };
-  if (!matchId || !clockSnapshot) return setDoc(penalty, data);
+  if (!matchId || !clockSnapshot) {
+    await setDoc(penalty, data);
+    await publishSnapshotSections(['penalties']);
+    return;
+  }
   await editLiveMatch(matchId, (tx, ref, match) => {
     teamSide(match, data.teamId);
     tx.set(penalty, data);
@@ -419,10 +436,11 @@ export const applyDisciplinaryPenalty = async ({
       }),
     });
   });
+  await publishSnapshotSections(['penalties', 'matches']);
 };
 
-export function undoLastEvent(matchId, expectedId) {
-  return editLiveMatch(matchId, (tx, ref, match, rawEvents) => {
+export async function undoLastEvent(matchId, expectedId) {
+  await editLiveMatch(matchId, (tx, ref, match, rawEvents) => {
     const event = match.events.at(-1);
     if (!expectedId || event?.id !== expectedId) throw new Error('تغيّر آخر حدث. راجع سجل المباراة.');
     const events = [...rawEvents];
@@ -464,6 +482,7 @@ export function undoLastEvent(matchId, expectedId) {
     }
     tx.update(ref, updates);
   });
+  await publishSnapshotSections(['matches', 'penalties']);
 }
 
 /**
@@ -471,6 +490,7 @@ export function undoLastEvent(matchId, expectedId) {
  */
 export const reverseDisciplinaryPenalty = async (penaltyId) => {
   await deleteDoc(doc(db, 'penalties', String(penaltyId)));
+  await publishSnapshotSections(['penalties']);
 };
 
 // Canonical bracket match document IDs also define which side receives each winner.
@@ -488,7 +508,7 @@ export const bracketSlotsFor = match => {
 
 async function finishMatch({ match: selected, clockSnapshot, tiebreakWinnerId, bracketSlotId, withdrawingTeamId,
   withdrawingTeamName = '', applyForfeitScore = true, pointsDeducted = 0 }) {
-  return editLiveMatch(selected.id, async (tx, ref, match) => {
+  const result = await editLiveMatch(selected.id, async (tx, ref, match) => {
     const forfeit = withdrawingTeamId != null;
     const updates = {
       status: forfeit ? 'انسحاب' : 'منتهية', timerStatus: 'ended',
@@ -559,34 +579,20 @@ async function finishMatch({ match: selected, clockSnapshot, tiebreakWinnerId, b
     tx.update(ref, updates);
     return { homeScore: updates.homeScore ?? match.homeScore, awayScore: updates.awayScore ?? match.awayScore };
   });
+  await publishSnapshotSections(['matches', 'bracket', 'penalties']);
+  return result;
 }
 
 export const endMatchManually = finishMatch;
 export const recordTeamForfeit = finishMatch;
 
-// Staff streams coalesce server-confirmed changes. The transaction retries against newer publications.
-const pendingSections = new Set();
-let publishTimer;
-let publishing = false;
-let retryDelay = 300;
-export function syncPublicSnapshot(section) {
-  for (const key of section ? [section] : sections) pendingSections.add(key);
-  if (publishing || publishTimer) return;
-  publishTimer = setTimeout(async () => {
-    publishTimer = undefined;
-    publishing = true;
-    const changed = [...pendingSections];
-    pendingSections.clear();
-    try {
-      await publishSnapshot(db, { doc, collection, runTransaction, getDocs: getDocsFromServer, serverTimestamp }, changed);
-      retryDelay = 300;
-    } catch (error) {
-      console.error('Public snapshot sync failed:', error.code);
-      changed.forEach(key => pendingSections.add(key));
-      retryDelay = Math.min(30000, retryDelay * 2);
-    } finally {
-      publishing = false;
-      if (pendingSections.size) syncPublicSnapshot([...pendingSections][0]);
-    }
-  }, retryDelay);
+// Serialize in-tab snapshot publishing so every staff write awaits fresh server truth without races.
+let publishQueue = Promise.resolve();
+export function publishSnapshotSections(changed = sections) {
+  const keys = Array.from(new Set(changed?.length ? changed : sections));
+  const task = publishQueue.then(() =>
+    publishSnapshot(db, { doc, collection, runTransaction, getDocs: getDocsFromServer, serverTimestamp }, keys)
+  );
+  publishQueue = task.catch(() => {});
+  return task;
 }
