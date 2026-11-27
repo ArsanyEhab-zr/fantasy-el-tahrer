@@ -7,6 +7,7 @@ import ManageGroups from '../pages/admin/ManageGroups';
 import ManageMatches from '../pages/admin/ManageMatches';
 import ManageBracket from '../pages/admin/ManageBracket';
 import ManageDiscipline from '../pages/admin/ManageDiscipline';
+import ManageBroadcast from '../pages/admin/ManageBroadcast';
 
 function LegacyAdminRedirect() {
   const { pathname, search, hash } = useLocation();
@@ -25,6 +26,7 @@ export default function TargetRoutes() {
         <Route path="matches" element={<ManageMatches />} />
         <Route path="bracket" element={<ManageBracket />} />
         <Route path="discipline" element={<ManageDiscipline />} />
+        <Route path="broadcast" element={<ManageBroadcast />} />
         <Route path="stats" element={<Navigate replace to="/discipline" />} />
         <Route path="create-match" element={<Navigate replace to="/matches" />} />
       </Route>

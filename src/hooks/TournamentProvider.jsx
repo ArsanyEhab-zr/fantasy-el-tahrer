@@ -6,6 +6,7 @@ import {
   DEFAULT_BRACKET_CONFIG,
   KNOCKOUT_ROUNDS,
   normalizeTournamentSettings,
+  normalizeBroadcastConfig,
   normalizeMatch,
   normalizePlayer,
   normalizePenalty,
@@ -32,6 +33,7 @@ const STANDINGS_MATCH_STATUSES = new Set(['منتهية', 'انتهت', 'انس�
 export function TournamentProvider({ children }) {
   const [settings, setSettings] = useState({ ...DEFAULT_TOURNAMENT_SETTINGS });
   const [bracketConfig, setBracketConfig] = useState({ ...DEFAULT_BRACKET_CONFIG });
+  const [broadcast, setBroadcast] = useState(() => normalizeBroadcastConfig());
   const [teams, setTeams] = useState([]);
   const [rawPlayers, setRawPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -44,6 +46,7 @@ export function TournamentProvider({ children }) {
       switch (key) {
         case 'settings': setSettings(normalizeTournamentSettings(data)); break;
         case 'bracket': setBracketConfig({ ...DEFAULT_BRACKET_CONFIG, ...data }); break;
+        case 'broadcast': setBroadcast(normalizeBroadcastConfig(data)); break;
         case 'teams': setTeams(data); break;
         case 'players': setRawPlayers(data.map(d => normalizePlayer(d, d.id))); break;
         case 'matches': setMatches(data.map(d => normalizeMatch(d, d.id))); break;
@@ -53,12 +56,13 @@ export function TournamentProvider({ children }) {
           .sort((a,b) => (parseTimestamp(b.createdAt)?.getTime() || 0) - (parseTimestamp(a.createdAt)?.getTime() || 0))); break;
       }
     }
-    const keys = ['settings', 'bracket', 'teams', 'players', 'matches', 'groups', 'penalties'];
+    const keys = ['settings', 'bracket', 'broadcast', 'teams', 'players', 'matches', 'groups', 'penalties'];
+    const configDocs = { settings: 'tournament', bracket: 'bracket', broadcast: 'broadcast' };
     if ((import.meta.env.VITE_APP_TARGET || 'viewer') === 'viewer') {
       return onSnapshot(doc(db, 'public/live_snapshot'), snap => {
         if (!snap.exists() && snap.metadata.fromCache && navigator.onLine) return;
         const data = snap.data() || {};
-        for (const key of keys) apply(key, data[key] || (['settings', 'bracket'].includes(key) ? {} : []));
+        for (const key of keys) apply(key, data[key] || (Object.hasOwn(configDocs, key) ? {} : []));
         setLoading(false);
       }, error => { console.error('Live snapshot:', error.code); setLoading(false); });
     }
@@ -68,8 +72,8 @@ export function TournamentProvider({ children }) {
       if (ready.size === keys.length) setLoading(false);
     }
     const stops = keys.map(key => {
-      const single = key === 'settings' || key === 'bracket';
-      const ref = single ? doc(db, 'config', key === 'settings' ? 'tournament' : key) : collection(db, key);
+      const single = Object.hasOwn(configDocs, key);
+      const ref = single ? doc(db, 'config', configDocs[key]) : collection(db, key);
       return onSnapshot(ref, { includeMetadataChanges: true }, snap => {
         const data = single ? snap.data() || {} : snap.docs.map(d => ({ ...d.data({ serverTimestamps: 'estimate' }), id: d.id }));
         apply(key, data);
@@ -325,6 +329,7 @@ export function TournamentProvider({ children }) {
     () => ({
       settings,
       bracketConfig,
+      broadcast,
       teams,
       players: computedPlayers,
       activePlayers,
@@ -344,6 +349,7 @@ export function TournamentProvider({ children }) {
     [
       settings,
       bracketConfig,
+      broadcast,
       teams,
       computedPlayers,
       activePlayers,

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
@@ -28,7 +28,9 @@ export default defineConfig(({ mode }) => {
   }
   const logos = readdirSync(new URL('./public/logos/', import.meta.url))
     .filter(file => file.endsWith('.svg')).sort().map(file => 'logos/' + file)
-  const files = [...logos, '_redirects', 'league-logo.webp', 'league-logo.png', 'brand/stadium.webp',
+  const channelLogos = ['channel-logo.png', 'channel-logo.webp', 'channel-logo.svg']
+    .filter(file => existsSync(new URL('./public/' + file, import.meta.url)))
+  const files = [...logos, ...channelLogos, '_redirects', 'league-logo.webp', 'league-logo.png', 'brand/stadium.webp',
     ...['favicon.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].map(file => icons + '/' + file)]
   if (target === 'viewer') {
     files.push('firebase-messaging-sw.js')

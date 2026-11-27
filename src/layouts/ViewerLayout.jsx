@@ -9,14 +9,19 @@ import FantaLogo from '../components/ui/FantaLogo';
 export default function ViewerLayout() {
   const push = usePushNotifications();
   const { pathname } = useLocation();
-  const { liveMatch, settings } = useTournament();
+  const { liveMatch, settings, broadcast } = useTournament();
   const [menuPath, setMenuPath] = useState(null);
   const open = menuPath === pathname;
   const setOpen = value => setMenuPath(value ? pathname : null);
   const toggle = useRef(null);
   const home = pathname === '/';
+  const broadcastLive = Boolean(broadcast?.isActive);
   const links = [
-    ['/', 'الرئيسية'], ['/live', 'مباشر'], ['/standings', 'الترتيب'], ['/scorers', 'الهدافون'],
+    ['/', 'الرئيسية'],
+    ['/watch-live', 'Watch Live'],
+    ['/live', 'مباشر'],
+    ['/standings', 'الترتيب'],
+    ['/scorers', 'الهدافون'],
     ...(settings?.enableKnockout ? [['/bracket', 'الإقصائيات']] : []),
   ];
 
@@ -41,8 +46,14 @@ export default function ViewerLayout() {
 
   const menuLinks = links.map(([to, label]) => (
     <NavLink key={to} end to={to} onClick={() => setOpen(false)}
-      className={({isActive}) => isActive ? 'text-fanta-orange' : 'text-white/80 hover:text-white'}>
-      {label}
+      className={({isActive}) => `inline-flex items-center gap-1.5 ${isActive ? 'text-fanta-orange' : 'text-white/80 hover:text-white'}`}>
+      {to === '/watch-live' && broadcastLive && (
+        <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+          <span className="animate-live-beacon absolute inline-flex h-full w-full rounded-full bg-fanta-crimson opacity-80" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-fanta-crimson" />
+        </span>
+      )}
+      <span dir={to === '/watch-live' ? 'ltr' : undefined}>{label}</span>
     </NavLink>
   ));
   const action = <Link to={liveMatch ? '/live' : '/#match-centre'} onClick={() => {

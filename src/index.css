@@ -299,3 +299,23 @@ input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   .hero-enter { animation: none; }
 }
+
+/* Transparent canvas override for OBS Browser Source (/overlay/*) */
+html.obs-overlay-mode,
+body.obs-overlay-mode,
+body.obs-overlay-mode #root {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden !important;
+}
+
+/* Ensure fullscreen broadcast stage fills screen cleanly */
+.watch-theater-fullscreen:fullscreen,
+.watch-theater-fullscreen:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

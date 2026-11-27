@@ -9,6 +9,11 @@ import {
 } from 'firebase/firestore';
 import { publishSnapshot, sections } from './publicSnapshot.js';
 import { db } from './firebase';
+import {
+  DEFAULT_CHANNEL_LOGO,
+  parseYouTubeVideoId,
+  sanitizeChannelLogoUrl,
+} from './broadcast.js';
 
 /**
  * Canonical Firestore Schema, Safe Normalizers & Write Helpers for Project Fanta.
@@ -29,6 +34,24 @@ export const DEFAULT_TOURNAMENT_SETTINGS = Object.freeze({
 
 export const DEFAULT_BRACKET_CONFIG = Object.freeze({
   size: 4,
+});
+
+export const DEFAULT_BROADCAST_HUD_VISIBILITY = Object.freeze({
+  scoreboard: true,
+  channelLogo: true,
+  eventTicker: true,
+  vintageStamp: true,
+});
+
+export const DEFAULT_BROADCAST_CONFIG = Object.freeze({
+  isActive: false,
+  youtubeUrl: '',
+  youtubeVideoId: '',
+  matchMode: 'auto',
+  manualMatchId: '',
+  channelLogoUrl: DEFAULT_CHANNEL_LOGO,
+  cameraStampName: 'ARSANY',
+  hudVisibility: DEFAULT_BROADCAST_HUD_VISIBILITY,
 });
 
 export const KNOCKOUT_ROUNDS = new Set([
@@ -56,6 +79,37 @@ export const normalizeTournamentSettings = (raw) => {
       Number.isFinite(parsedHalf) && parsedHalf >= 1 && parsedHalf <= 90
         ? Math.floor(parsedHalf)
         : DEFAULT_TOURNAMENT_SETTINGS.halfDurationMinutes,
+  };
+};
+
+export const normalizeBroadcastConfig = (raw) => {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      ...DEFAULT_BROADCAST_CONFIG,
+      hudVisibility: { ...DEFAULT_BROADCAST_HUD_VISIBILITY },
+    };
+  }
+  const youtubeUrl = typeof raw.youtubeUrl === 'string' ? raw.youtubeUrl.trim() : '';
+  const youtubeVideoId = parseYouTubeVideoId(raw.youtubeVideoId || youtubeUrl);
+  const hud = raw.hudVisibility && typeof raw.hudVisibility === 'object' ? raw.hudVisibility : {};
+  const stampName = typeof raw.cameraStampName === 'string' && raw.cameraStampName.trim()
+    ? raw.cameraStampName.trim().slice(0, 24)
+    : DEFAULT_BROADCAST_CONFIG.cameraStampName;
+
+  return {
+    isActive: Boolean(raw.isActive),
+    youtubeUrl,
+    youtubeVideoId,
+    matchMode: raw.matchMode === 'manual' ? 'manual' : 'auto',
+    manualMatchId: typeof raw.manualMatchId === 'string' ? raw.manualMatchId.trim() : '',
+    channelLogoUrl: sanitizeChannelLogoUrl(raw.channelLogoUrl),
+    cameraStampName: stampName,
+    hudVisibility: {
+      scoreboard: hud.scoreboard !== false,
+      channelLogo: hud.channelLogo !== false,
+      eventTicker: hud.eventTicker !== false,
+      vintageStamp: hud.vintageStamp !== false,
+    },
   };
 };
 
@@ -188,6 +242,23 @@ export const saveTournamentSettings = async (partial) => {
   }
   await setDoc(doc(db, 'config', 'tournament'), payload, { merge: true });
   await publishSnapshotSections(['settings']);
+};
+
+/**
+ * Save YouTube/OBS broadcast configuration in config/broadcast and sync to public/live_snapshot.
+ */
+export const saveBroadcastConfig = async (partial) => {
+  const normalized = normalizeBroadcastConfig(partial);
+  await setDoc(
+    doc(db, 'config', 'broadcast'),
+    {
+      ...normalized,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+  await publishSnapshotSections(['broadcast']);
+  return normalized;
 };
 
 /**

@@ -1,5 +1,11 @@
 // Both the CLI bootstrap and staff clients use the same document shape and commit protocol.
-export const sections = ['settings', 'bracket', 'teams', 'players', 'groups', 'matches', 'penalties'];
+export const sections = ['settings', 'bracket', 'broadcast', 'teams', 'players', 'groups', 'matches', 'penalties'];
+
+const CONFIG_DOC_MAP = {
+  settings: 'tournament',
+  bracket: 'bracket',
+  broadcast: 'broadcast',
+};
 
 // Map field order can vary between SDKs and reads of identical data.
 function comparable(value) {
@@ -15,8 +21,8 @@ export async function publishSnapshot(db, sdk, changed = sections) {
     const stored = await tx.get(ref);
     const keys = stored.exists() ? changed : sections;
     const values = await Promise.all(keys.map(async key => {
-      if (key === 'settings' || key === 'bracket') {
-        const config = await tx.get(sdk.doc(db, 'config', key === 'settings' ? 'tournament' : 'bracket'));
+      if (Object.hasOwn(CONFIG_DOC_MAP, key)) {
+        const config = await tx.get(sdk.doc(db, 'config', CONFIG_DOC_MAP[key]));
         return config.data() || {};
       }
       const rows = await sdk.getDocs(sdk.collection(db, key));

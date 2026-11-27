@@ -9,6 +9,7 @@ import {
   CalendarClock,
   GitBranch,
   Scale,
+  Tv,
   Menu,
   X,
   LogOut,
@@ -25,6 +26,7 @@ const ADMIN_NAV = [
   { to: '/matches', label: 'جدول المباريات', icon: CalendarClock },
   { to: '/bracket', label: 'دور الإقصائيات', icon: GitBranch },
   { to: '/discipline', label: 'الانضباط والخصومات', icon: Scale },
+  { to: '/broadcast', label: 'إعدادات البث', icon: Tv },
 ];
 
 /**
